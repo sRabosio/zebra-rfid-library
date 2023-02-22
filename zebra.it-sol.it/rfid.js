@@ -1,14 +1,12 @@
 
 
 
-
-window.enumRfid = (rfidArray)=>{ 
-			var rfidInfo = "RFID On Device: " + rfidArray.length + "--"
-		  for (i=0; i < rfidArray.length; i++)
-		  {
-			rfidInfo = rfidInfo +"ID:"+ rfidArray[i][0] + '\nname:'+ rfidArray[i][1] + '\naddress '+rfidArray[i][2]
-		  }
-		  alert(rfidInfo)
+function init(){
+	onEnumerate(readers=>{
+		rfid.readerId = readers[0][0]
+	})
+	rfid.enumerate()
+	rfid.connect()
 }
 
 /**
@@ -30,3 +28,24 @@ export const onEnumerate = (callback)=>{
 	window.enumRfid = callback
 }
 
+/**
+ * performs inventory and triggers tagEvent
+ */
+export function startInventory(){
+	alert("start")
+	alert(rfid.readerId)
+	rfid.performInventory()
+}
+
+/**
+ * @function
+ * @param {function} callback - function that gets called during "performInventory()" execution
+ */
+export const onTagEvent = (callback)=>{
+	window.tagHandler = callback
+	rfid.tagEvent = "tagHandler(%json)"
+}
+
+
+//keep at the bottom
+init()
