@@ -4,6 +4,7 @@
 function init(){
 	onEnumerate(readers=>{
 		rfid.readerId = readers[0][0]
+		alert(rfid.readerId)
 	})
 	rfid.enumerate()
 	rfid.connect()
@@ -13,8 +14,7 @@ function init(){
  * Calls "onEnumerate" callback function and returns the number of rfid scanners
  * @returns {number} number of rfid scanners found
  */
-export function enumerate(){ 
-  rfid.enumRFIDEvent = "enumRfid(%s);"
+export function enumerate(){
   return rfid.enumerate()
 }
 
@@ -26,6 +26,7 @@ export function enumerate(){
  */
 export const onEnumerate = (callback)=>{
 	window.enumRfid = callback
+	rfid.enumRFIDEvent = "enumRfid(%s);"
 }
 
 /**
