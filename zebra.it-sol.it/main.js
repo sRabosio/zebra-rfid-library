@@ -1,4 +1,4 @@
-const folderName = "zebra.it-sol.it/"
+/*const folderName = "zebra.it-sol.it/"
 export let options = {
 	deps: ["elements", "ebapi-modules"],
 	path: ""
@@ -18,6 +18,6 @@ const GET_PATH = ()=>path+folderName
 }
 
 if(deps.at(0) != null)
-init()
+init()*/
 
 
