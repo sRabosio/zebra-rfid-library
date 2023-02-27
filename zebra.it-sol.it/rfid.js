@@ -3,24 +3,67 @@
 *
 * tagEvent is used for multiple operations and thus should be reassigned before doing any operation
 *
-*
+* TODO: locate tag
 */
 
+
+
+const inventoryData = {
+	tags: [],
+	reads: new Array(50),
+	chunk: function(newChunk){this.reads = new Array(newChunk)},
+	addTag: function(newTag){
+		const condition = this.tags.find(e=>e.tagID === newTag.tagID)
+		console.log("cond", condition );
+		if(condition) return
+		this.tags.push(newTag)		
+	}
+}
+
+let onTagEvent = ()=>{}
+
+window.inventoryHandler = dataArray=>{
+	dataArray.TagData.forEach(e=>{
+		console.log(e);
+		inventoryData.addTag(e)
+		inventoryData.reads.pop()
+		inventoryData.reads.unshift(e)
+	})
+	const {tags, reads} = inventoryData
+	onTagEvent(tags, reads)
+}
+
+
+rfid.transport = "serial"
 
 function init(){
 	console.log(rfid)
 	//non rimuovere
-	rfid.transport = "serial"
 	onEnumerate(readers=>{
 		console.log("readers found", readers);
 		rfid.readerID = readers[0][0]
 	})
 	rfid.enumerate()
 	rfid.connect()
-	console.log("readerid", rfid.readerID);
-	
+	//console.log("readerid", rfid.readerID);
 }
 
+
+
+
+
+/**
+ * sets transport mode for ...
+ * 
+ * default is serial
+ * 
+ * possible values: 
+ * 	-serial
+ *  -bluetooth 
+ * 
+ * @param {string} newTransport - new transport mode 
+ */
+export const setTransport = newTransport=>{rfid.transport = newTransport}
 
 /**
  * Calls "onEnumerate" callback function and returns the number of rfid scanners
@@ -28,6 +71,12 @@ function init(){
  */
 export const enumerate = rfid.enumerate()
 
+/**
+ * disconnects current rfid reader
+ * 
+ * WARNING: when no rfid reader is connected the program
+ * may crash when starting an rfid operation
+ */
 export const disconnect = rfid.disconnect()
 
 /**
@@ -64,7 +113,7 @@ export function startInventory(){
 	if(!rfid.readerID)
 		console.log("no rfid reader", rfid.readerID)
 	console.log("starting...")
-	rfid.tagEvent = "tagHandler(%json)"
+	rfid.tagEvent = "inventoryHandler(%json)"
 	rfid.performInventory()
 }
 
@@ -76,10 +125,10 @@ export const stop = rfid.stop
 
 /**
  * @function
- * @param {function} callback - function that gets called during "performInventory()" execution
+ * @param {function} callback - function that gets called during "startInventory()" execution
  */
-export const onTagEvent = (callback)=>{
-	window.tagHandler = callback
+export const onInventory = (callback)=>{
+	onTagEvent = callback
 }
 
 //keep at the bottom

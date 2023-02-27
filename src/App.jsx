@@ -12,14 +12,9 @@ function App() {
   content.add("amongus3")
   console.log("destrct to array",[...content]);
   
-
-  ebsol.onTagEvent(tagArray=>{
-    if(tagArray.tagData.length > 1) return
-    currentRfid = tagArray.tagData[0].tagID
-    const newContent = new Set()
-    newContent.add(...content)
-    newContent.add(...tagArray.TagData.map(e=>e.tagID))
-    setContent(newContent)
+  
+  ebsol.onInventory((tags, reads)=>{
+    console.log("onInv res", {tags, reads});
   })
 
   ebsol.onTagLocate(data=>{
