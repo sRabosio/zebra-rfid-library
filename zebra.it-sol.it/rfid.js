@@ -7,6 +7,11 @@
 */
 
 
+//definitions
+let onTagEvent = ()=>{}
+
+
+
 
 const inventoryData = {
 	tags: [],
@@ -14,17 +19,14 @@ const inventoryData = {
 	chunk: function(newChunk){this.reads = new Array(newChunk)},
 	addTag: function(newTag){
 		const condition = this.tags.find(e=>e.tagID === newTag.tagID)
-		console.log("cond", condition );
 		if(condition) return
 		this.tags.push(newTag)		
 	}
 }
 
-let onTagEvent = ()=>{}
 
 window.inventoryHandler = dataArray=>{
 	dataArray.TagData.forEach(e=>{
-		console.log(e);
 		inventoryData.addTag(e)
 		inventoryData.reads.pop()
 		inventoryData.reads.unshift(e)
@@ -40,17 +42,26 @@ function init(){
 	console.log(rfid)
 	//non rimuovere
 	onEnumerate(readers=>{
-		console.log("readers found", readers);
+		//console.log("readers found", readers);
 		rfid.readerID = readers[0][0]
 	})
 	rfid.enumerate()
 	rfid.connect()
 	//console.log("readerid", rfid.readerID);
+	
+	defaultProperties
 }
 
 
+function defaultProperties(){
+	rfid.beepOnRead = true
+}
 
-
+/**
+ * Used to specify whether the device should beep whenever application receives a tag.
+ * @param {boolean} value 
+ */
+export const beepOnRead = value=>rfid.beepOnRead = value
 
 /**
  * sets transport mode for ...

@@ -4,21 +4,20 @@ import * as ebsol from '../zebra.it-sol.it/rfid'
 
 function App() {
 
-  const [content, setContent] = useState(new Set())
-  let currentRfid = null
+  const [content, setContent] = useState([])
+  const [lastTag, setLastTag] = useState("")
+  const [distance, setDistance] = useState("")
 
-  content.add("amongus1")
-  content.add("amongus2")
-  content.add("amongus3")
-  console.log("destrct to array",[...content]);
-  
   
   ebsol.onInventory((tags, reads)=>{
     console.log("onInv res", {tags, reads});
+    setContent(tags)
+    setLastTag(reads.at(-1).tagID)
   })
 
   ebsol.onTagLocate(data=>{
     console.log("on locate tag",data);
+    setDistance(data.TagLocate)
   })
 
 
@@ -26,13 +25,9 @@ function App() {
     <>
       <button onClick={ebsol.startInventory}>PROVA1 1</button>
       <button onClick={ebsol.stop}>STOP</button>
-      <button onClick={()=>{ebsol.locateTag(currentRfid )}}>START LOCATE</button>
-      {[...content].map(e=>{
-        console.log(e);
-        return <p>{e}</p>
-        }
-        )
-      }
+      <button onClick={()=>{ebsol.locateTag(lastTag)}}>START LOCATE</button>
+      <h2>Last tag: {lastTag}</h2>
+      <h2>Distance: {distance}</h2>
     </>
   )
 }
