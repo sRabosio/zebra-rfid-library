@@ -4,13 +4,24 @@
 * tagEvent is used for multiple operations and thus should be reassigned before doing any operation
 *
 * TODO: locate tag
+*
+* TODO: revert to default settings after single scan
 */
 
 
 //definitions
 let onTagEvent = ()=>{}
+let onSingleScanEvent = ()=>{}
 
+const singleScanOpt = {
+	stopTriggerType: "tagObservation",
+	stopObservationCount: 1
+}
 
+const performInventoryOpt = {
+	stopTriggerType: "tagObservation",
+	stopObservationCount: 10
+}
 
 
 const inventoryData = {
@@ -24,6 +35,10 @@ const inventoryData = {
 	}
 }
 
+window.scanSingleRfidHandler = dataArray=>{
+	onSingleScanEvent(dataArray.TagData.at(0))
+	rfid.stop() 
+}
 
 window.inventoryHandler = dataArray=>{
 	dataArray.TagData.forEach(e=>{
@@ -124,6 +139,11 @@ export function startInventory(){
 	if(!rfid.readerID)
 		console.log("no rfid reader", rfid.readerID)
 	console.log("starting...")
+
+	//setting options
+	rfid.stopTriggerType = performInventoryOpt.stopTriggerType
+	rfid.stopObservationCount = performInventoryOpt.stopObservationCount
+
 	rfid.tagEvent = "inventoryHandler(%json)"
 	rfid.performInventory()
 }
@@ -141,6 +161,26 @@ export const stop = rfid.stop
 export const onInventory = (callback)=>{
 	onTagEvent = callback
 }
+
+export const scanSingleRfid = ()=>{
+
+	//setting options
+	rfid.stopTriggerType = singleScanOpt.stopTriggerType
+	rfid.stopObservationCount = singleScanOpt.stopObservationCount
+
+	rfid.tagEvent = "scanSingleRfidHandler(%json)"
+	rfid.performInventory()
+}
+
+/**
+ * @function
+ * @param {function} callback - function that gets called during "scanSingleRfid" operation
+ */
+export const onScanSingleRfid = callback=>{
+	onSingleScanEvent = callback
+}
+
+
 
 //keep at the bottom
 init()

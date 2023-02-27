@@ -10,14 +10,19 @@ function App() {
 
   
   ebsol.onInventory((tags, reads)=>{
-    console.log("onInv res", {tags, reads});
+    console.log("onInv res", {tags, reads})
     setContent(tags)
-    setLastTag(reads.at(-1).tagID)
+    setLastTag(tags.at(-1).tagID)
   })
 
   ebsol.onTagLocate(data=>{
-    console.log("on locate tag",data);
+    console.log("on locate tag",data)
     setDistance(data.TagLocate)
+  })
+
+  ebsol.onScanSingleRfid(data=>{
+    console.log("single found", data);
+    setLastTag(data.tagID)
   })
 
 
@@ -26,6 +31,7 @@ function App() {
       <button onClick={ebsol.startInventory}>PROVA1 1</button>
       <button onClick={ebsol.stop}>STOP</button>
       <button onClick={()=>{ebsol.locateTag(lastTag)}}>START LOCATE</button>
+      <button onClick={ebsol.scanSingleRfid}>SCAN SINGLE</button>
       <h2>Last tag: {lastTag}</h2>
       <h2>Distance: {distance}</h2>
     </>
