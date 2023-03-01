@@ -11,7 +11,7 @@ function App() {
   
   ebsol.onInventory((tags, reads)=>{
     console.log("onInv res", {tags, reads})
-    setContent(tags)
+    setContent([...tags])
     setLastTag(tags.at(0).tagID)
   })
 

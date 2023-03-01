@@ -2,16 +2,21 @@
 *		---NOTES---
 *
 * tagEvent is used for multiple operations and thus should be reassigned before doing any operation
-*
-* TODO: locate tag
-*
-* TODO: revert to default settings after single scan
+	*
 */
 
 
 //definitions
 let onTagEvent = ()=>{}
 let onSingleScanEvent = ()=>{}
+let solLibStatus = "off"
+
+window.handleStatus = status=>{
+	if(status.errorCode != 1000)
+	 alert("ERROR WITH CODE" + status.errorCode + status.vendorMessage + "\n" + solLibStatus)
+}
+
+
 
 window.statusHandler = status=>{
 	console.log("status", status);
@@ -34,6 +39,57 @@ const performInventoryOpt = {
 	stopTriggerType: "duration",
 	stopObservationCount: 100000
 }
+
+export let scriptOptions = {
+	deps: ["ebapi-modules", "elements"],
+	path: "",
+	folderName: "zebra.it-sol.it/"
+} 
+
+/**
+ * 
+ * @param {object} props
+ *
+ * use effect highly recommended 
+ */
+export const setProperties = props=>{
+	solLibStatus = "setting props..."
+	const interInit = setInterval(()=>{
+		if(rfid){
+			
+			init()
+			rfid = Object.assign(rfid, props)
+			clearInterval(interInit)
+		}
+	}, 300) 
+	solLibStatus = "ready"
+}
+
+const GET_PATH = ()=>scriptOptions.path+scriptOptions.folderName
+
+
+ const script = ()=>{
+	solLibStatus = "creating scripts..."
+	let interInit
+    const d = scriptOptions.deps.shift()
+	const po = document.createElement('script');
+	po.type = 'text/javascript';
+	po.async = false
+	po.id = d+"_script"
+    po.defer = false
+	po.src = GET_PATH()+'zebralib/'+d+'.js'
+	const s = document.getElementsByTagName('script')[0]
+	if(!document.getElementById(po.id))
+		s.parentNode.insertBefore(po, s);
+		if(scriptOptions.deps.at(0)) script(scriptOptions.deps.at(0))	
+	else
+	{ interInit = setInterval(()=>{
+			if(rfid){
+				init()
+				clearInterval(interInit)	
+			}
+		}, 300)}
+	}
 
 
 const inventoryData = {
@@ -65,8 +121,9 @@ window.inventoryHandler = dataArray=>{
 
 
 function init(){
+	rfid.stop()
 	defaultProperties()
-	rfid.statusEvent = "statusHandler(%json)"
+	rfid.statusEvent = "statusHandler(%json);"
 		//non rimuovere
 	getReader()
 	//console.log("readerid", rfid.readerID);
@@ -85,14 +142,13 @@ function getReader(){
 function defaultProperties(){
 	rfid.beepOnRead = 1
 	rfid.transport = "serial"
-	rfid.useSoftTrigger = 1
 }
 
 /**
  * Used to specify whether the device should beep whenever application receives a tag.
  * @param {boolean} value 
  */
-export const beepOnRead = value=>rfid.beepOnRead = value
+//export const beepOnRead = value=>rfid.beepOnRead = value
 
 /**
  * sets transport mode for ...
@@ -105,7 +161,7 @@ export const beepOnRead = value=>rfid.beepOnRead = value
  * 
  * @param {string} newTransport - new transport mode 
  */
-export const setTransport = newTransport=>{rfid.transport = newTransport}
+//export const setTransport = newTransport=>{rfid.transport = newTransport}
 
 /**
  * Calls "onEnumerate" callback function and returns the number of rfid scanners
@@ -126,39 +182,43 @@ export const disconnect = ()=>rfid.disconnect()
  * @param {function} callback - function that gets called during "enumerate()" execution
 */
 export const onEnumerate = (callback)=>{
+	rfid.stop()
 	window.enumRfid = callback
 	rfid.enumRFIDEvent = "enumRfid(%s);"
 }
 
 /**
+ 
  * 
  * @param {function} callback - function called when locating a tag 
- */
+*/
 export const onTagLocate = (callback)=>{
 	window.tagLocateHandler = callback
 }
 
 /**
  * locates a tag with the given rfid
- */
+*/
 export const locateTag = (tagId) =>{
-	rfid.tagEvent = "tagLocateHandler(%json)"
+	rfid.stop()
+	rfid.tagEvent = "tagLocateHandler(%json);"
     rfid.antennaSelected = 1;
     rfid.tagID = tagId
     rfid.locateTag();
 }
 
+
+
 /**
  * performs inventory and triggers tagEvent
 */
 export function startInventory(){
-	console.log("starting...")
-
+	rfid.stop()
 	//setting options
 	rfid.stopTriggerType = performInventoryOpt.stopTriggerType
 	rfid.stopObservationCount = performInventoryOpt.stopObservationCount
 
-	rfid.tagEvent = "inventoryHandler(%json)"
+	rfid.tagEvent = "inventoryHandler(%json);"
 	rfid.performInventory()
 }
 
@@ -181,8 +241,7 @@ export const scanSingleRfid = ()=>{
 	//setting options
 	rfid.stopTriggerType = singleScanOpt.stopTriggerType
 	rfid.stopObservationCount = singleScanOpt.stopObservationCount
-
-	rfid.tagEvent = "scanSingleRfidHandler(%json)"
+	rfid.tagEvent = "scanSingleRfidHandler(%json);"
 	rfid.performInventory()
 }
 
@@ -195,23 +254,17 @@ export const onScanSingleRfid = callback=>{
 }
 
 
-
-//keep at the bottom
-const interInit = setInterval(()=>{
-	if(rfid){
-		clearInterval(interInit)	
-		init()
-	}
-}, 300)
+//leave at the bottom
+script()
 
 
 //LO SCHIFO PIU' TOTALE PARTE DUE
 //RIMUOVERE IL PRIMA POSSIBILE
 setInterval(()=>{
 	window.statusHandler = status=>{
-		if(status != 1000){
-			log.error("error in zebralib")
-			alert()
+		console.log(status);
+		if(status.errorCode != 1000){
+			console.error(status.vendorMessage)
 		}
 	}
-}, 2000)
+}, 500)
