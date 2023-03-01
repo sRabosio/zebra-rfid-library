@@ -9,12 +9,6 @@
 //definitions
 let onTagEvent = ()=>{}
 let onSingleScanEvent = ()=>{}
-let solLibStatus = "off"
-
-window.handleStatus = status=>{
-	if(status.errorCode != 1000)
-	 alert("ERROR WITH CODE" + status.errorCode + status.vendorMessage + "\n" + solLibStatus)
-}
 
 
 
@@ -23,10 +17,9 @@ window.statusHandler = status=>{
 	if(status.errorCode != 1000){
 		console.error("ERROR WITH CODE"+status.errorCode	 + "\n" + status.method + " "+status.vendorMessage)
 		
-		//LO SCHIFO PIU' TOTALE PARTE UNO
+		//HORRIBLE FIX PARTE UNO
 		//RIMUOVERE IL PRIMA POSSIBILE
 		window.location.reload()
-		alert(status.errorCode + status.vendorMessage)
 	}
 }
 
@@ -37,7 +30,7 @@ const singleScanOpt = {
 
 const performInventoryOpt = {
 	stopTriggerType: "duration",
-	stopObservationCount: 100000
+	stopObservationCount: 10000000
 }
 
 export let scriptOptions = {
@@ -53,7 +46,6 @@ export let scriptOptions = {
  * use effect highly recommended 
  */
 export const setProperties = props=>{
-	solLibStatus = "setting props..."
 	const interInit = setInterval(()=>{
 		if(rfid){
 			
@@ -62,14 +54,12 @@ export const setProperties = props=>{
 			clearInterval(interInit)
 		}
 	}, 300) 
-	solLibStatus = "ready"
 }
 
 const GET_PATH = ()=>scriptOptions.path+scriptOptions.folderName
 
 
  const script = ()=>{
-	solLibStatus = "creating scripts..."
 	let interInit
     const d = scriptOptions.deps.shift()
 	const po = document.createElement('script');
@@ -258,7 +248,7 @@ export const onScanSingleRfid = callback=>{
 script()
 
 
-//LO SCHIFO PIU' TOTALE PARTE DUE
+//HORRBILE FIX PARTE DUE
 //RIMUOVERE IL PRIMA POSSIBILE
 setInterval(()=>{
 	window.statusHandler = status=>{
