@@ -12,7 +12,7 @@ function App() {
   ebsol.onInventory((tags, reads)=>{
     console.log("onInv res", {tags, reads})
     setContent(tags)
-    setLastTag(tags.at(-1).tagID)
+    setLastTag(tags.at(0).tagID)
   })
 
   ebsol.onTagLocate(data=>{
@@ -34,6 +34,8 @@ function App() {
       <button onClick={ebsol.scanSingleRfid}>SCAN SINGLE</button>
       <h2>Last tag: {lastTag}</h2>
       <h2>Distance: {distance}</h2>
+      <h2>TAGS FOUND</h2>
+      {content.map(e=><p>{e.tagID}</p>)}  
     </>
   )
 }

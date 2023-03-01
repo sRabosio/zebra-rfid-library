@@ -13,14 +13,26 @@
 let onTagEvent = ()=>{}
 let onSingleScanEvent = ()=>{}
 
+window.statusHandler = status=>{
+	console.log("status", status);
+	if(status.errorCode != 1000){
+		console.error("ERROR WITH CODE"+status.errorCode	 + "\n" + status.method + " "+status.vendorMessage)
+		
+		//LO SCHIFO PIU' TOTALE PARTE UNO
+		//RIMUOVERE IL PRIMA POSSIBILE
+		window.location.reload()
+		alert(status.errorCode + status.vendorMessage)
+	}
+}
+
 const singleScanOpt = {
 	stopTriggerType: "tagObservation",
 	stopObservationCount: 1
 }
 
 const performInventoryOpt = {
-	stopTriggerType: "tagObservation",
-	stopObservationCount: 10
+	stopTriggerType: "duration",
+	stopObservationCount: 100000
 }
 
 
@@ -51,25 +63,29 @@ window.inventoryHandler = dataArray=>{
 }
 
 
-rfid.transport = "serial"
 
 function init(){
-	console.log(rfid)
-	//non rimuovere
+	defaultProperties()
+	rfid.statusEvent = "statusHandler(%json)"
+		//non rimuovere
+	getReader()
+	//console.log("readerid", rfid.readerID);
+}
+
+function getReader(){
 	onEnumerate(readers=>{
-		//console.log("readers found", readers);
+		console.log("readers found", readers);
 		rfid.readerID = readers[0][0]
+		console.log(readers[0][0]);
 	})
 	rfid.enumerate()
 	rfid.connect()
-	//console.log("readerid", rfid.readerID);
-	
-	defaultProperties
 }
 
-
 function defaultProperties(){
-	rfid.beepOnRead = true
+	rfid.beepOnRead = 1
+	rfid.transport = "serial"
+	rfid.useSoftTrigger = 1
 }
 
 /**
@@ -95,7 +111,7 @@ export const setTransport = newTransport=>{rfid.transport = newTransport}
  * Calls "onEnumerate" callback function and returns the number of rfid scanners
  * @returns {number} number of rfid scanners found
  */
-export const enumerate = rfid.enumerate()
+export const enumerate = ()=>rfid.enumerate()
 
 /**
  * disconnects current rfid reader
@@ -103,7 +119,7 @@ export const enumerate = rfid.enumerate()
  * WARNING: when no rfid reader is connected the program
  * may crash when starting an rfid operation
  */
-export const disconnect = rfid.disconnect()
+export const disconnect = ()=>rfid.disconnect()
 
 /**
  * @function
@@ -136,8 +152,6 @@ export const locateTag = (tagId) =>{
  * performs inventory and triggers tagEvent
 */
 export function startInventory(){
-	if(!rfid.readerID)
-		console.log("no rfid reader", rfid.readerID)
 	console.log("starting...")
 
 	//setting options
@@ -152,7 +166,7 @@ export function startInventory(){
  * @function
  * stops current operation
  */
-export const stop = rfid.stop
+export const stop = ()=>rfid.stop()
 
 /**
  * @function
@@ -183,4 +197,21 @@ export const onScanSingleRfid = callback=>{
 
 
 //keep at the bottom
-init()
+const interInit = setInterval(()=>{
+	if(rfid){
+		clearInterval(interInit)	
+		init()
+	}
+}, 300)
+
+
+//LO SCHIFO PIU' TOTALE PARTE DUE
+//RIMUOVERE IL PRIMA POSSIBILE
+setInterval(()=>{
+	window.statusHandler = status=>{
+		if(status != 1000){
+			log.error("error in zebralib")
+			alert()
+		}
+	}
+}, 2000)
