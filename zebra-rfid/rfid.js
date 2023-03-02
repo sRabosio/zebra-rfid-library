@@ -5,7 +5,6 @@
 *
 */
 
-
 /**
  * @callback onInventoryEvent
  * @param {object[]} tags - individual tags found
@@ -22,22 +21,39 @@
  * @param {object} tag - tag found
  */
 
-//definitions
-let onTagEvent = ()=>{}
-let onSingleScanEvent = ()=>{}
-
+let statusManager = {
+    "CONNECTION_EVENT": status=>{
+		if(status.errorCode == 1000) defaultProperties()
+		else console.error(status.vendorMessage)
+	},
+	"readersListArray is empty": status=>{
+		if(status.errorCode == 2000)init()
+		else console.error(status.vendorMessage)
+	}
+}
 
 
 window.statusHandler = status=>{
-	console.log("status", status);
-	if(status.errorCode != 1000){
-		console.error("ERROR WITH CODE"+status.errorCode	 + "\n" + status.method + " "+status.vendorMessage)
-		
-		//HORRIBLE FIX PARTE UNO
-		//RIMUOVERE IL PRIMA POSSIBILE
-		window.location.reload()
-	}
+	console.log(status);
+    const callback = statusManager[status.vendorMessage]
+    if(callback) callback(status)
+	else
+		if(status.errorCode != 1000) console.error(status.vendorMessage + status.errorCode);
 }
+
+/**
+ * 
+ * @param {object} handlers - object containing error handlers
+ * syntax: {string}error:{function}handler 
+ */
+export const addStatusHandlers = handlers=>{
+    statusManager = Object.assign(statusManager, handlers)   
+}
+
+//definitions
+let onTagEvent = ()=>{}
+let onSingleScanEvent = ()=>{}
+window.enumRfid = ()=>{}
 
 const singleScanOpt = {
 	stopTriggerType: "tagObservation",
@@ -52,8 +68,10 @@ const performInventoryOpt = {
 export let scriptOptions = {
 	deps: ["ebapi-modules", "elements"],
 	path: "",
-	folderName: "zebra.it-sol.it/"
+	folderName: "zebra-rfid/"
 } 
+
+
 
 /**
  * 
@@ -66,8 +84,6 @@ export let scriptOptions = {
 export const setProperties = props=>{
 	const interInit = setInterval(()=>{
 		if(rfid){
-			
-			init()
 			rfid = Object.assign(rfid, props)
 			clearInterval(interInit)
 		}
@@ -113,7 +129,7 @@ const inventoryData = {
 
 window.scanSingleRfidHandler = dataArray=>{
 	onSingleScanEvent(dataArray.TagData.at(0))
-	rfid.stop() 
+	stop()
 }
 
 window.inventoryHandler = dataArray=>{
@@ -129,10 +145,7 @@ window.inventoryHandler = dataArray=>{
 
 
 function init(){
-	rfid.stop()
-	defaultProperties()
-	rfid.statusEvent = "statusHandler(%json);"
-		//non rimuovere
+	rfid.statusEvent = "statusHandler(%json)"
 	getReader()
 }
 
@@ -172,7 +185,6 @@ export const disconnect = ()=>rfid.disconnect()
  * @param {function} callback - function that gets called during "enumerate()" execution
 */
 export const onEnumerate = (callback)=>{
-	rfid.stop()
 	window.enumRfid = callback
 	rfid.enumRFIDEvent = "enumRfid(%s);"
 }
@@ -189,7 +201,6 @@ export const onTagLocate = (callback)=>{
  * locates a tag with the given rfid
 */
 export const locateTag = (tagId) =>{
-	rfid.stop()
 	rfid.tagEvent = "tagLocateHandler(%json);"
     rfid.antennaSelected = 1;
     rfid.tagID = tagId
@@ -202,7 +213,6 @@ export const locateTag = (tagId) =>{
  * performs inventory and triggers tagEvent
 */
 export function startInventory(){
-	rfid.stop()
 	//setting options
 	rfid.stopTriggerType = performInventoryOpt.stopTriggerType
 	rfid.stopObservationCount = performInventoryOpt.stopObservationCount
@@ -215,7 +225,13 @@ export function startInventory(){
  * @function
  * stops current operation
  */
-export const stop = ()=>rfid.stop()
+export const stop = ()=>{
+	try{
+		rfid.stop()
+	}catch(e){
+		console.error(e);
+	}
+}
 
 /**
  * @function
@@ -244,15 +260,3 @@ export const onScanSingleRfid = callback=>{
 
 //leave at the bottom
 script()
-
-
-//HORRBILE FIX PARTE DUE
-//RIMUOVERE IL PRIMA POSSIBILE
-setInterval(()=>{
-	window.statusHandler = status=>{
-		console.log(status);
-		if(status.errorCode != 1000){
-			console.error(status.vendorMessage)
-		}
-	}
-}, 500)
