@@ -2,9 +2,25 @@
 *		---NOTES---
 *
 * tagEvent is used for multiple operations and thus should be reassigned before doing any operation
-	*
+*
 */
 
+
+/**
+ * @callback onInventoryEvent
+ * @param {object[]} tags - individual tags found
+ * @param {object[]} reads - last 50 reads
+ */
+
+/**
+ * @callback onTagLocateEvent
+ * @param {number} distance - the distance between the reader and the tag, goes from 0 to 100
+ */
+
+/**
+ * @callback onScanSingleRfidEvent
+ * @param {object} tag - tag found
+ */
 
 //definitions
 let onTagEvent = ()=>{}
@@ -41,9 +57,11 @@ export let scriptOptions = {
 
 /**
  * 
- * @param {object} props
+ * @param {object} props - rfid object properties
  *
- * use effect highly recommended 
+ * use effect highly recommended
+ * 
+ * for the list of parameters see official zebra documentation: https://techdocs.zebra.com/enterprise-browser/3-3/api/re2x/rfid/
  */
 export const setProperties = props=>{
 	const interInit = setInterval(()=>{
@@ -116,7 +134,6 @@ function init(){
 	rfid.statusEvent = "statusHandler(%json);"
 		//non rimuovere
 	getReader()
-	//console.log("readerid", rfid.readerID);
 }
 
 function getReader(){
@@ -130,28 +147,11 @@ function getReader(){
 }
 
 function defaultProperties(){
-	rfid.beepOnRead = 1
-	rfid.transport = "serial"
+	setProperties({
+		beepOnRead: 1,
+		transport: "serial"
+	})
 }
-
-/**
- * Used to specify whether the device should beep whenever application receives a tag.
- * @param {boolean} value 
- */
-//export const beepOnRead = value=>rfid.beepOnRead = value
-
-/**
- * sets transport mode for ...
- * 
- * default is serial
- * 
- * possible values: 
- * 	-serial
- *  -bluetooth 
- * 
- * @param {string} newTransport - new transport mode 
- */
-//export const setTransport = newTransport=>{rfid.transport = newTransport}
 
 /**
  * Calls "onEnumerate" callback function and returns the number of rfid scanners
@@ -178,9 +178,8 @@ export const onEnumerate = (callback)=>{
 }
 
 /**
- 
- * 
- * @param {function} callback - function called when locating a tag 
+ * locates tag
+ * @param {onTagLocateEvent} callback - function called when locating a tag 
 */
 export const onTagLocate = (callback)=>{
 	window.tagLocateHandler = callback
@@ -220,7 +219,7 @@ export const stop = ()=>rfid.stop()
 
 /**
  * @function
- * @param {function} callback - function that gets called during "startInventory()" execution
+ * @param {onInventoryEvent} callback - function that gets called during "startInventory()" execution
  */
 export const onInventory = (callback)=>{
 	onTagEvent = callback
@@ -236,8 +235,7 @@ export const scanSingleRfid = ()=>{
 }
 
 /**
- * @function
- * @param {function} callback - function that gets called during "scanSingleRfid" operation
+ * @param {onScanSingleRfidEvent} callback - function that gets called during "scanSingleRfid" operation
  */
 export const onScanSingleRfid = callback=>{
 	onSingleScanEvent = callback
