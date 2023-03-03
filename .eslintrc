@@ -1,0 +1,68 @@
+{
+  "parser": "@babel/eslint-parser",
+  "extends": [
+    "plugin:prettier/recommended",
+    "airbnb",
+    "prettier",
+    "plugin:react-hooks/recommended"
+  ],
+  "plugins": ["flowtype", "babel", "prettier"],
+  "parserOptions": {
+    "requireConfigFile": false,
+    "ecmaVersion": 8,
+    "sourceType": "module"
+  },
+  "env": {
+    "browser": true,
+    "node": true,
+    "jasmine": true
+  },
+  "rules": {
+    "semi": "off",
+    "strict": [2, "never"],
+    "no-param-reassign": "warn",
+    "class-methods-use-this": "warn",
+    "import/prefer-default-export": "warn",
+    "no-unused-vars": "off",
+    "consistent-return": "off",
+    "no-undef": "off",
+    "default-param-last": "off",
+    "react/sort-comp": "off",
+    "array-callback-return": "off",
+    "no-restricted-globals": "off",
+    "no-dupe-keys": "off",
+    "no-empty": "off",
+    "no-shadow": "off",
+    "no-prototype-builtins": "off",
+    "import/no-duplicates": "off",
+    "no-underscore-dangle": "off",
+    "no-useless-escape": "off",
+    "no-unused-expressions": "off",
+    "no-unsafe-optional-chaining": "off",
+    "camelcase": "off",
+    "import/no-cycle": "off",
+    "spaced-comment": "off",
+    "prefer-destructuring": "off",
+    "import/no-unresolved": "off",
+    "no-nested-ternary": "warn",
+    "no-plusplus": "off",
+    "eqeqeq": "warn",
+    "no-restricted-exports": "off",
+    "no-lonely-if": "off",
+    "import/order": "off",
+    "prettier/prettier": "off",
+    "default-case": "off",
+    "import/named": "warn",
+    "import/no-extraneous-dependencies": "off",
+    "no-use-before-define": "off",
+    "no-promise-executor-return": "off",
+    "radix": "off",
+    "arrow-body-style": "off",
+    "no-extend-native": "warn"
+  },
+
+  "globals": {
+    "VERSION": false,
+    "serviceWorkerOption": false
+  }
+}
