@@ -46,7 +46,7 @@ window.statusHandler = status=>{
  * @param {object} handlers - object containing error handlers
  * syntax: {string}error:{function}handler 
  */
-export const addStatusHandlers = handlers=>{
+const addStatusHandlers = handlers=>{
     statusManager = Object.assign(statusManager, handlers)   
 }
 
@@ -68,7 +68,7 @@ const performInventoryOpt = {
 export let scriptOptions = {
 	deps: ["ebapi-modules", "elements"],
 	path: "",
-	folderName: "zebra-rfid/"
+	folderName: "zebra-rfid-library/"
 } 
 
 
