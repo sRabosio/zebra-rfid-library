@@ -21,32 +21,57 @@
  * @param {object} tag - tag found
  */
 
+/**
+ * @typedef {Object} statusDefinition
+ * @param {string} name - name of the status to be associated with statusManager
+ * @param {string} errorCode
+ * @param {string} vendorMessage
+ * @param {string} method
+ */
+
+/**
+ * error definitions to properly identify errors
+ * @type {statusDefinition[]}
+ */
+const statusDefinitions = [
+	{name:"CONNECTION_EVENT",errorCode:"1000", vendorMessage:"CONNECTION_EVENT"},
+	{name: "DISCONNECTION_EVENT", errorCode:"1000", vendorMessage:"DISCONNECTION_EVENT"},
+	{name:"READER_NOT_CONNECTED", errorCode: "2003"},
+	{name:"INVENTORY_OPERATION_FAILURE", errorCode:"2005", method:"performInventory", vendorMessage: "RFID_CHARGING_COMMAND_NOT_ALLOWED-Charging"},
+	{name:"LOCATE_NO_TAG", errorCode: "2004", method:"locateTag"}
+] 
+
+
+
 let statusManager = {
-    "CONNECTION_EVENT": status=>{
-		if(status.errorCode == 1000) defaultProperties()
-		else console.error(status.vendorMessage)
-	},
-	"readersListArray is empty": status=>{
-		if(status.errorCode == 2000)init()
-		else console.error(status.vendorMessage)
-	}
+    CONNECTION_EVENT: defaultProperties,
+	READER_NOT_CONNECTED: init
 }
 
+//gets error name to be used as key in statusManager
+const getError = status=>statusDefinitions.filter(e=>e.errorCode === status.errorCode &&
+	(e.vendorMessage ? status.vendorMessage.includes(e.vendorMessage) : true) &&
+	(e.method ? status.method === e.method : true))
+	.sort((a,b)=>{
+		if(a.vendorMessage.length>b.vendorMessage.length) return -1
+		if(a.vendorMessage.length<b.vendorMessage.length) return 1
+		return 0
+	})[0]?.name
 
 window.statusHandler = status=>{
-	console.log(status);
-    const callback = statusManager[status.vendorMessage]
+    const callback = statusManager[getError(status)]
     if(callback) callback(status)
 	else
-		if(status.errorCode != 1000) console.error(status.vendorMessage + status.errorCode);
+		if(status.errorCode != 1000) console.error(status.vendorMessage + status.errorCode + status.vendorMessage);
 }
 
 /**
  * 
  * @param {object} handlers - object containing error handlers
- * syntax: {string}error:{function}handler 
+ * syntax: 
+ * key:{string}error, value:{function}handler 
  */
-const addStatusHandlers = handlers=>{
+export const addStatusHandlers = handlers=>{
     statusManager = Object.assign(statusManager, handlers)   
 }
 
@@ -65,11 +90,11 @@ const performInventoryOpt = {
 	stopObservationCount: 10000000
 }
 
-export let scriptOptions = {
-	deps: ["ebapi-modules", "elements"],
-	path: "",
-	folderName: "zebra-rfid-library/"
-} 
+export const scriptOptions = {
+  deps: ["ebapi-modules", "elements"],
+  path: "",
+  folderName: "zebra-rfid-library/",
+}; 
 
 
 
@@ -98,10 +123,9 @@ const GET_PATH = ()=>scriptOptions.path+scriptOptions.folderName
     const d = scriptOptions.deps.shift()
 	const po = document.createElement('script');
 	po.type = 'text/javascript';
-	po.async = false
-	po.id = d+"_script"
-    po.defer = false
-	po.src = GET_PATH()+'zebralib/'+d+'.js'
+	po.async = true
+	po.id = `${d}_script`
+	po.src = `${GET_PATH()}zebralib/${d}.js`
 	const s = document.getElementsByTagName('script')[0]
 	if(!document.getElementById(po.id))
 		s.parentNode.insertBefore(po, s);
@@ -119,8 +143,8 @@ const GET_PATH = ()=>scriptOptions.path+scriptOptions.folderName
 const inventoryData = {
 	tags: [],
 	reads: new Array(50),
-	chunk: function(newChunk){this.reads = new Array(newChunk)},
-	addTag: function(newTag){
+	chunk(newChunk){this.reads = new Array(newChunk)},
+	addTag(newTag){
 		const condition = this.tags.find(e=>e.tagID === newTag.tagID)
 		if(condition) return
 		this.tags.push(newTag)		
@@ -145,15 +169,14 @@ window.inventoryHandler = dataArray=>{
 
 
 function init(){
+	disconnect()
 	rfid.statusEvent = "statusHandler(%json)"
 	getReader()
 }
 
 function getReader(){
 	onEnumerate(readers=>{
-		console.log("readers found", readers);
 		rfid.readerID = readers[0][0]
-		console.log(readers[0][0]);
 	})
 	rfid.enumerate()
 	rfid.connect()
