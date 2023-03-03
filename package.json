@@ -1,9 +1,8 @@
 {
   "name": "zebra-rfid-library",
   "private": false,
-  "version": "0.1.0-alpha",
+  "version": "0.1.1-alpha",
   "type": "module",
-  "main": "zebra-rfid-library/rfid.js",
   "scripts": {
     "clean": "rimraf lib build",
     "compile": "babel -d lib/ zebra-rfid-library/",
