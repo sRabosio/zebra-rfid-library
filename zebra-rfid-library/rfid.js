@@ -260,7 +260,8 @@ export const onScanSingleRfid = callback=>{
 //leave at the bottom
 const interInit = setInterval(()=>{
 	if(rfid){
-		init()
-		clearInterval(interInit)	
-	}
+    //alert(rfid);
+    init();
+    clearInterval(interInit);
+  }
 }, 300)

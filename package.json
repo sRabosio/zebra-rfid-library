@@ -1,7 +1,7 @@
 {
   "name": "zebra-rfid-library",
   "private": false,
-  "version": "0.2.0-alpha",
+  "version": "0.2.1-alpha",
   "type": "module",
   "main": "lib/rfid.js",
   "scripts": {
