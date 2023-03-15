@@ -1,4 +1,7 @@
 # zebra-react-lib
+
+Warning: requires script injection from eb to be enabled
+
 ## Functions
 
 <dt><a href="#enumerate">enumerate()</a> ⇒ <code>number</code></dt>
