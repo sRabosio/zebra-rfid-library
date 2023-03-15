@@ -1,8 +1,9 @@
 {
   "name": "zebra-rfid-library",
   "private": false,
-  "version": "0.1.1-alpha",
+  "version": "0.1.4-alpha",
   "type": "module",
+  "main": "lib/rfid.js",
   "scripts": {
     "clean": "rimraf lib build",
     "compile": "babel -d lib/ zebra-rfid-library/",
@@ -72,5 +73,9 @@
     "react-dom": "^18.2.0",
     "rimraf": "4.1.2",
     "vite": "^4.1.0"
+  },
+  "dependencies": {
+    "@babel/runtime": "^7.21.0",
+    "core-js": "^3.29.1"
   }
 }
