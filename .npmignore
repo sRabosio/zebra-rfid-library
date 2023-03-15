@@ -8,3 +8,4 @@ build/
 *.html
 *.old
 vite.config.js
+out/

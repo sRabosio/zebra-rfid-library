@@ -32,6 +32,7 @@
 /**
  * error definitions to properly identify errors
  * @type {statusDefinition[]}
+ * @ignore
  */
 const statusDefinitions = [
 	{name:"CONNECTION_EVENT",errorCode:"1000", vendorMessage:"CONNECTION_EVENT"},
@@ -68,6 +69,7 @@ window.statusHandler = status=>{
 /**
  * 
  * @param {object} handlers - object containing error handlers
+ * @function
  * syntax: 
  * key:{string}error, value:{function}handler 
  */
@@ -90,17 +92,11 @@ const performInventoryOpt = {
 	stopObservationCount: 10000000
 }
 
-export const scriptOptions = {
-  deps: ["ebapi-modules", "elements"],
-  path: "",
-  folderName: "zebra-rfid-library/",
-}; 
-
-
 
 /**
  * 
  * @param {object} props - rfid object properties
+ * @function
  *
  * use effect highly recommended
  * 
@@ -114,31 +110,6 @@ export const setProperties = props=>{
 		}
 	}, 300) 
 }
-
-const GET_PATH = ()=>scriptOptions.path+scriptOptions.folderName
-
-
- const script = ()=>{
-	let interInit
-    const d = scriptOptions.deps.shift()
-	const po = document.createElement('script');
-	po.type = 'text/javascript';
-	po.async = true
-	po.id = `${d}_script`
-	po.src = `${GET_PATH()}zebralib/${d}.js`
-	const s = document.getElementsByTagName('script')[0]
-	if(!document.getElementById(po.id))
-		s.parentNode.insertBefore(po, s);
-		if(scriptOptions.deps.at(0)) script(scriptOptions.deps.at(0))	
-	else
-	{ interInit = setInterval(()=>{
-			if(rfid){
-				init()
-				clearInterval(interInit)	
-			}
-		}, 300)}
-	}
-
 
 const inventoryData = {
 	tags: [],
@@ -192,10 +163,12 @@ function defaultProperties(){
 /**
  * Calls "onEnumerate" callback function and returns the number of rfid scanners
  * @returns {number} number of rfid scanners found
+ * @function
  */
 export const enumerate = ()=>rfid.enumerate()
 
 /**
+ * @function
  * disconnects current rfid reader
  * 
  * WARNING: when no rfid reader is connected the program
@@ -215,12 +188,14 @@ export const onEnumerate = (callback)=>{
 /**
  * locates tag
  * @param {onTagLocateEvent} callback - function called when locating a tag 
+ * @function
 */
 export const onTagLocate = (callback)=>{
 	window.tagLocateHandler = callback
 }
 
 /**
+ * @function
  * locates a tag with the given rfid
 */
 export const locateTag = (tagId) =>{
@@ -275,6 +250,7 @@ export const scanSingleRfid = ()=>{
 
 /**
  * @param {onScanSingleRfidEvent} callback - function that gets called during "scanSingleRfid" operation
+ * @function
  */
 export const onScanSingleRfid = callback=>{
 	onSingleScanEvent = callback
@@ -282,4 +258,9 @@ export const onScanSingleRfid = callback=>{
 
 
 //leave at the bottom
-script()
+const interInit = setInterval(()=>{
+	if(rfid){
+		init()
+		clearInterval(interInit)	
+	}
+}, 300)
