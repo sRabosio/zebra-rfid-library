@@ -35,31 +35,71 @@
  * @ignore
  */
 const statusDefinitions = [
-	{name:"CONNECTION_EVENT",errorCode:"1000", vendorMessage:"CONNECTION_EVENT"},
-	{name: "DISCONNECTION_EVENT", errorCode:"1000", vendorMessage:"DISCONNECTION_EVENT"},
-	{name:"READER_NOT_CONNECTED", errorCode: "2003"},
-	{name:"INVENTORY_OPERATION_FAILURE", errorCode:"2005", method:"performInventory", vendorMessage: "RFID_CHARGING_COMMAND_NOT_ALLOWED-Charging"},
-	{name:"LOCATE_NO_TAG", errorCode: "2004", method:"locateTag"}
-] 
-
-
+  {
+    name: "CONNECTION_EVENT",
+    errorCode: "1000",
+    vendorMessage: "CONNECTION_EVENT",
+    internalCode: "CONNECTION_EVENT",
+  },
+  {
+    name: "DISCONNECTION_EVENT",
+    errorCode: "1000",
+    vendorMessage: "DISCONNECTION_EVENT",
+    internalCode: "DISCONNECTION_EVENT",
+  },
+  {
+    name: "READER_NOT_CONNECTED",
+    errorCode: "2003",
+    internalCode: "READER_NOT_CONNECTED",
+  },
+  {
+    name: "CONNECTION_EVENT",
+    errorCode: "2000",
+    internalCode: "CONNECTION_2000",
+  },
+  {
+    name: "INVENTORY_OPERATION_FAILURE",
+    errorCode: "2005",
+    method: "performInventory",
+    vendorMessage: "RFID_CHARGING_COMMAND_NOT_ALLOWED-Charging",
+    internalCode: "INVENTORY_OPERATION_FAILURE",
+  },
+  {
+    name: "LOCATE_NO_TAG",
+    errorCode: "2004",
+    method: "locateTag",
+    internalCode: "LOCATE_NO_TAG",
+  },
+];
 
 let statusManager = {
-    CONNECTION_EVENT: defaultProperties,
-	READER_NOT_CONNECTED: init
-}
+  CONNECTION_EVENT: defaultProperties,
+  READER_NOT_CONNECTED: init,
+};
+
+// const onConnection2000 = status=>{
+// 	init()
+// }
 
 //gets error name to be used as key in statusManager
-const getError = status=>statusDefinitions.filter(e=>e.errorCode === status.errorCode &&
-	(e.vendorMessage ? status.vendorMessage.includes(e.vendorMessage) : true) &&
-	(e.method ? status.method === e.method : true))
-	.sort((a,b)=>{
-		if(a.vendorMessage.length>b.vendorMessage.length) return -1
-		if(a.vendorMessage.length<b.vendorMessage.length) return 1
-		return 0
-	})[0]?.name
+const getError = (status) =>
+  statusDefinitions
+    .filter(
+      (e) =>
+        e.errorCode === status.errorCode &&
+        (e.vendorMessage
+          ? status.vendorMessage.includes(e.vendorMessage)
+          : true) &&
+        (e.method ? status.method === e.method : true)
+    )
+    .sort((a, b) => {
+      if (a.vendorMessage.length > b.vendorMessage.length) return -1;
+      if (a.vendorMessage.length < b.vendorMessage.length) return 1;
+      return 0;
+    })[0]?.name;
 
 window.statusHandler = (status) => {
+  if (rfid.logEvents) console.log(status);
   const callback = statusManager[getError(status)];
   if (callback) callback(status);
   else if (status.errorCode != 1000)
@@ -187,6 +227,7 @@ function defaultProperties() {
     beepOnRead: 1,
     transport: "serial",
     useSoftTrigger: 1,
+    logEvents: false,
   });
 }
 
