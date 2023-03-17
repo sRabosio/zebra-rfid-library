@@ -50,36 +50,26 @@ const statusDefinitions = [
   {
     name: "READER_NOT_CONNECTED",
     errorCode: "2003",
+    vendorMessage: "Reader Not Connected",
     internalCode: "READER_NOT_CONNECTED",
-  },
-  {
-    name: "CONNECTION_EVENT",
-    errorCode: "2000",
-    internalCode: "CONNECTION_2000",
   },
   {
     name: "INVENTORY_OPERATION_FAILURE",
     errorCode: "2005",
     method: "performInventory",
     vendorMessage: "RFID_CHARGING_COMMAND_NOT_ALLOWED-Charging",
-    internalCode: "INVENTORY_OPERATION_FAILURE",
   },
-  {
-    name: "LOCATE_NO_TAG",
-    errorCode: "2004",
-    method: "locateTag",
-    internalCode: "LOCATE_NO_TAG",
-  },
+  { name: "LOCATE_NO_TAG", errorCode: "2004", method: "locateTag" },
+  { errorCode: "2004", method: "connect", internalCode: "RECONNECT" },
 ];
 
 let statusManager = {
   CONNECTION_EVENT: defaultProperties,
-  READER_NOT_CONNECTED: init,
+  READER_NOT_CONNECTED: () => {
+    hasInit = false;
+    init();
+  },
 };
-
-// const onConnection2000 = status=>{
-// 	init()
-// }
 
 //gets error name to be used as key in statusManager
 const getError = (status) =>
@@ -96,10 +86,10 @@ const getError = (status) =>
       if (a.vendorMessage.length > b.vendorMessage.length) return -1;
       if (a.vendorMessage.length < b.vendorMessage.length) return 1;
       return 0;
-    })[0]?.name;
+    })[0]?.internalCode;
 
 window.statusHandler = (status) => {
-  if (rfid.logEvents) console.log(status);
+  console.log(status);
   const callback = statusManager[getError(status)];
   if (callback) callback(status);
   else if (status.errorCode != 1000)
@@ -183,7 +173,6 @@ window.inventoryHandler = (dataArray) => {
 let hasInit = false;
 
 function init() {
-  createCallbacks();
   rfid.statusEvent = "statusHandler(%json)";
   getReader();
 }
@@ -192,8 +181,8 @@ export const attach = () => {
   //leave at the bottom
   const interInit = setInterval(() => {
     if (rfid) {
+      if (hasInit) return;
       init();
-      hasInit = true;
       console.log("initialized");
       clearInterval(interInit);
     }
@@ -202,24 +191,19 @@ export const attach = () => {
 
 export const detach = () => {
   if (!hasInit) return;
-  createCallbacks();
-  disconnect();
-  console.log("detached");
-  hasInit = false;
-};
-
-const createCallbacks = () => {
   onEnumerate(() => {});
   onInventory(() => {});
   onScanSingleRfid(() => {});
   onSingleScanEvent(() => {});
   onTagEvent(() => {});
   onTagLocate(() => {});
+  disconnect();
+  console.log("detached");
+  hasInit = false;
 };
 
 function getReader() {
-  if (hasInit) return;
-  disconnect();
+  console.log("searching for reader");
   onEnumerate((readers) => {
     rfid.readerID = readers[0][0];
   });
@@ -232,7 +216,6 @@ function defaultProperties() {
     beepOnRead: 1,
     transport: "serial",
     useSoftTrigger: 1,
-    logEvents: false,
   });
 }
 
@@ -241,16 +224,18 @@ function defaultProperties() {
  * @returns {number} number of rfid scanners found
  * @function
  */
-export const enumerate = ()=>rfid.enumerate()
+export const enumerate = () => rfid.enumerate();
 
 /**
  * @function
  * disconnects current rfid reader
- * 
+ *
  * WARNING: when no rfid reader is connected the program
  * may crash when starting an rfid operation
  */
-export const disconnect = ()=>rfid.disconnect()
+export const disconnect = () => {
+  rfid.disconnect();
+};
 
 /**
  * @function
