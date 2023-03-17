@@ -59,83 +59,86 @@ const getError = status=>statusDefinitions.filter(e=>e.errorCode === status.erro
 		return 0
 	})[0]?.name
 
-window.statusHandler = status=>{
-    const callback = statusManager[getError(status)]
-    if(callback) callback(status)
-	else
-		if(status.errorCode != 1000) console.error(status.vendorMessage + status.errorCode + status.vendorMessage);
-}
+window.statusHandler = (status) => {
+  const callback = statusManager[getError(status)];
+  if (callback) callback(status);
+  else if (status.errorCode != 1000)
+    console.trace(
+      status.vendorMessage + status.errorCode + status.vendorMessage
+    );
+};
 
 /**
- * 
+ *
  * @param {object} handlers - object containing error handlers
  * @function
- * syntax: 
- * key:{string}error, value:{function}handler 
+ * syntax:
+ * key:{string}error, value:{function}handler
  */
-export const addStatusHandlers = handlers=>{
-    statusManager = Object.assign(statusManager, handlers)   
-}
+export const addStatusHandlers = (handlers) => {
+  statusManager = Object.assign(statusManager, handlers);
+};
 
 //definitions
-let onTagEvent = ()=>{}
-let onSingleScanEvent = ()=>{}
-window.enumRfid = ()=>{}
+let onTagEvent = () => {};
+let onSingleScanEvent = () => {};
+window.enumRfid = () => {};
 
 const singleScanOpt = {
-	stopTriggerType: "tagObservation",
-	stopObservationCount: 1
-}
+  stopTriggerType: "tagObservation",
+  stopObservationCount: 1,
+};
 
 const performInventoryOpt = {
-	stopTriggerType: "duration",
-	stopObservationCount: 10000000
-}
-
+  stopTriggerType: "duration",
+  stopObservationCount: 10000000,
+};
 
 /**
- * 
+ *
  * @param {object} props - rfid object properties
  * @function
  *
  * use effect highly recommended
- * 
+ *
  * for the list of parameters see official zebra documentation: https://techdocs.zebra.com/enterprise-browser/3-3/api/re2x/rfid/
  */
-export const setProperties = props=>{
-	const interInit = setInterval(()=>{
-		if(rfid){
-			rfid = Object.assign(rfid, props)
-			clearInterval(interInit)
-		}
-	}, 300) 
-}
+export const setProperties = (props) => {
+  const interInit = setInterval(() => {
+    if (rfid) {
+      rfid = Object.assign(rfid, props);
+      clearInterval(interInit);
+    }
+  }, 300);
+};
 
 const inventoryData = {
-	tags: [],
-	reads: new Array(50),
-	chunk(newChunk){this.reads = new Array(newChunk)},
-	addTag(newTag){
-		const condition = this.tags.find(e=>e.tagID === newTag.tagID)
-		if(condition) return
-		this.tags.push(newTag)		
-	}
-}
+  tags: [],
+  reads: new Array(50),
+  chunk(newChunk) {
+    this.reads = new Array(newChunk);
+  },
+  addTag(newTag) {
+    const condition = this.tags.find((e) => e.tagID === newTag.tagID);
+    if (condition) return;
+    this.tags.push(newTag);
+  },
+};
 
-window.scanSingleRfidHandler = dataArray=>{
-	onSingleScanEvent(dataArray.TagData.at(0))
-	stop()
-}
+window.scanSingleRfidHandler = (dataArray) => {
+  onSingleScanEvent(dataArray.TagData.at(0));
+  stop();
+};
 
-window.inventoryHandler = dataArray=>{
-	dataArray.TagData.forEach(e=>{
-		inventoryData.addTag(e)
-		inventoryData.reads.pop()
-		inventoryData.reads.unshift(e)
-	})
-	const {tags, reads} = inventoryData
-	onTagEvent(tags, reads)
-}
+window.inventoryHandler = (dataArray) => {
+  dataArray.TagData.forEach((e) => {
+    inventoryData.addTag(e);
+    inventoryData.reads.pop();
+    inventoryData.reads.unshift(e);
+  });
+  const { tags, reads } = inventoryData;
+  onTagEvent(tags, reads);
+};
 
 let hasInit = false;
 
@@ -165,22 +168,25 @@ export const detach = () => {
   onTagEvent(() => {});
   onTagLocate(() => {});
   disconnect();
+  console.log("detached");
   hasInit = false;
 };
 
-function getReader(){
-	onEnumerate(readers=>{
-		rfid.readerID = readers[0][0]
-	})
-	rfid.enumerate()
-	rfid.connect()
+function getReader() {
+  disconnect();
+  onEnumerate((readers) => {
+    rfid.readerID = readers[0][0];
+  });
+  rfid.enumerate();
+  rfid.connect();
 }
 
-function defaultProperties(){
-	setProperties({
-		beepOnRead: 1,
-		transport: "serial"
-	})
+function defaultProperties() {
+  setProperties({
+    beepOnRead: 1,
+    transport: "serial",
+    useSoftTrigger: 1,
+  });
 }
 
 /**
