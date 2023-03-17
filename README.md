@@ -2,6 +2,23 @@
 
 Warning: requires script injection from eb to be enabled
 
+## Getting started
+  
+  It is advised to setup enterprise browser's script tag injection to inject required libraries (eb-module.js & elements.js) into the page.
+
+  ### Using the library
+  
+  1) import the library (import * as rfidlib from 'zebra-rfid-library')
+  2) setup attach and detach calls, react example below:
+   ```
+     useEffect(() => {
+      rfidlib.attach();
+      return rfidlib.detach;
+    }, []);
+   ```
+   this is to prevent memory leaks and conflicts between different components which use the library
+  
+
 ## Functions
 
 <dt><a href="#enumerate">enumerate()</a> ⇒ <code>number</code></dt>
