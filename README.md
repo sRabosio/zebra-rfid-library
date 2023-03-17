@@ -9,7 +9,7 @@ Warning: requires script injection from eb to be enabled
   ### Using the library
   
   1) import the library (import * as rfidlib from 'zebra-rfid-library')
-  2) setup attach and detach calls using the code below:
+  2) setup attach and detach calls, react example below:
    ```
      useEffect(() => {
       rfidlib.attach();
