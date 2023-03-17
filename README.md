@@ -16,7 +16,7 @@ Warning: requires script injection from eb to be enabled
       return rfidlib.detach;
     }, []);
    ```
-   this is to prevent memory leaks and conflicts between different components wich use the library
+   this is to prevent memory leaks and conflicts between different components which use the library
   
 
 ## Functions
