@@ -10,12 +10,12 @@ Warning: requires script injection from eb to be enabled
   
   1) import the library (import * as rfidlib from 'zebra-rfid-library')
   2) setup attach and detach calls using the code below:
-   '''
+   ```
      useEffect(() => {
       rfidlib.attach();
       return rfidlib.detach;
     }, []);
-   '''
+   ```
    this is to prevent memory leaks and conflicts between different components wich use the library
   
 
