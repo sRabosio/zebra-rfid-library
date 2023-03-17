@@ -183,6 +183,7 @@ window.inventoryHandler = (dataArray) => {
 let hasInit = false;
 
 function init() {
+  createCallbacks();
   rfid.statusEvent = "statusHandler(%json)";
   getReader();
 }
@@ -201,15 +202,19 @@ export const attach = () => {
 
 export const detach = () => {
   if (!hasInit) return;
+  createCallbacks();
+  disconnect();
+  console.log("detached");
+  hasInit = false;
+};
+
+const createCallbacks = () => {
   onEnumerate(() => {});
   onInventory(() => {});
   onScanSingleRfid(() => {});
   onSingleScanEvent(() => {});
   onTagEvent(() => {});
   onTagLocate(() => {});
-  disconnect();
-  console.log("detached");
-  hasInit = false;
 };
 
 function getReader() {
