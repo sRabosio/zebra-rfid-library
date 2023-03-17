@@ -63,7 +63,7 @@ window.statusHandler = (status) => {
   const callback = statusManager[getError(status)];
   if (callback) callback(status);
   else if (status.errorCode != 1000)
-    console.trace(
+    console.warn(
       status.vendorMessage + status.errorCode + status.vendorMessage
     );
 };
@@ -173,6 +173,7 @@ export const detach = () => {
 };
 
 function getReader() {
+  if (hasInit) return;
   disconnect();
   onEnumerate((readers) => {
     rfid.readerID = readers[0][0];
