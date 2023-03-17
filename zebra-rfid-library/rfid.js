@@ -137,13 +137,36 @@ window.inventoryHandler = dataArray=>{
 	onTagEvent(tags, reads)
 }
 
+let hasInit = false;
 
-
-function init(){
-	disconnect()
-	rfid.statusEvent = "statusHandler(%json)"
-	getReader()
+function init() {
+  rfid.statusEvent = "statusHandler(%json)";
+  getReader();
 }
+
+export const attach = () => {
+  //leave at the bottom
+  const interInit = setInterval(() => {
+    if (rfid) {
+      init();
+      hasInit = true;
+      console.log("initialized");
+      clearInterval(interInit);
+    }
+  }, 300);
+};
+
+export const detach = () => {
+  if (!hasInit) return;
+  onEnumerate(() => {});
+  onInventory(() => {});
+  onScanSingleRfid(() => {});
+  onSingleScanEvent(() => {});
+  onTagEvent(() => {});
+  onTagLocate(() => {});
+  disconnect();
+  hasInit = false;
+};
 
 function getReader(){
 	onEnumerate(readers=>{
@@ -257,10 +280,4 @@ export const onScanSingleRfid = callback=>{
 }
 
 
-//leave at the bottom
-const interInit = setInterval(()=>{
-	if (rfid) {
-    init();
-    clearInterval(interInit);
-  }
-}, 300)
+
