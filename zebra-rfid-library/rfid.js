@@ -1,9 +1,9 @@
 /*
-*		---NOTES---
-*
-* tagEvent is used for multiple operations and thus should be reassigned before doing any operation
-*
-*/
+ *		---NOTES---
+ *
+ * tagEvent is used for multiple operations and thus should be reassigned before doing any operation
+ *
+ */
 
 /**
  * @callback onInventoryEvent
@@ -27,6 +27,7 @@
  * @param {string} errorCode
  * @param {string} vendorMessage
  * @param {string} method
+ * @param {string} internalCode - unique assigned code with which to identify associated callbacks
  */
 
 /**
@@ -36,40 +37,61 @@
  */
 const statusDefinitions = [
   {
-    name: "CONNECTION_EVENT",
-    errorCode: "1000",
-    vendorMessage: "CONNECTION_EVENT",
-    internalCode: "CONNECTION_EVENT",
+    name: 'CONNECTION_EVENT',
+    errorCode: '1000',
+    vendorMessage: 'CONNECTION_EVENT',
+    internalCode: 'CONNECTION_EVENT',
   },
   {
-    name: "DISCONNECTION_EVENT",
-    errorCode: "1000",
-    vendorMessage: "DISCONNECTION_EVENT",
-    internalCode: "DISCONNECTION_EVENT",
+    name: 'DISCONNECTION_EVENT',
+    errorCode: '1000',
+    vendorMessage: 'DISCONNECTION_EVENT',
+    internalCode: 'DISCONNECTION_EVENT',
   },
   {
-    name: "READER_NOT_CONNECTED",
-    errorCode: "2003",
-    vendorMessage: "Reader Not Connected",
-    internalCode: "READER_NOT_CONNECTED",
+    name: 'READER_NOT_CONNECTED',
+    errorCode: '2003',
+    vendorMessage: 'Reader Not Connected',
+    internalCode: 'READER_NOT_CONNECTED',
   },
   {
-    name: "INVENTORY_OPERATION_FAILURE",
-    errorCode: "2005",
-    method: "performInventory",
-    vendorMessage: "RFID_CHARGING_COMMAND_NOT_ALLOWED-Charging",
+    name: 'INVENTORY_OPERATION_FAILURE',
+    errorCode: '2005',
+    method: 'performInventory',
+    vendorMessage: 'RFID_CHARGING_COMMAND_NOT_ALLOWED-Charging',
   },
-  { name: "LOCATE_NO_TAG", errorCode: "2004", method: "locateTag" },
-  { errorCode: "2004", method: "connect", internalCode: "RECONNECT" },
+  { name: 'LOCATE_NO_TAG', errorCode: '2004', method: 'locateTag' },
+  { errorCode: '2004', method: 'connect', internalCode: 'RECONNECT' },
+  { errorCode: '2000', method: 'connect', internalCode: 'READER_LIST_EMPTY' },
 ];
 
 let statusManager = {
-  CONNECTION_EVENT: defaultProperties,
-  READER_NOT_CONNECTED: () => {
+  //connects to reader
+  CONNECTION_EVENT: (status) => {
+    defaultProperties();
+    _isConnected = true;
+    console.log('initialized with status', status);
+    if (_onConnectionCallback) _onConnectionCallback();
+  },
+  READER_NOT_CONNECTED: (status) => {
     hasInit = false;
+    console.log(status.vendorMessage, status);
     init();
   },
+  //disconnects from reader
+  DISCONNECTION_EVENT: (status) => {
+    _isConnected = false;
+    console.log('disconnected with status', status);
+    if (_onDisconnectionCallback) _onDisconnectionCallback();
+  },
+  READER_LIST_EMPTY: (status) => {
+    hasInit = false;
+    console.log(status.vendorMessage);
+    getReader();
+  },
 };
+
+let _isConnected = false;
 
 //gets error name to be used as key in statusManager
 const getError = (status) =>
@@ -89,13 +111,18 @@ const getError = (status) =>
     })[0]?.internalCode;
 
 window.statusHandler = (status) => {
-  console.log(status);
+  console.log('before status callback', {
+    status,
+    getError: getError(status),
+    _onConnectionCallback,
+  });
   const callback = statusManager[getError(status)];
   if (callback) callback(status);
   else if (status.errorCode != 1000)
     console.warn(
       status.vendorMessage + status.errorCode + status.vendorMessage
     );
+  else console.log('non error status', status);
 };
 
 /**
@@ -115,12 +142,12 @@ let onSingleScanEvent = () => {};
 window.enumRfid = () => {};
 
 const singleScanOpt = {
-  stopTriggerType: "tagObservation",
+  stopTriggerType: 'tagObservation',
   stopObservationCount: 1,
 };
 
 const performInventoryOpt = {
-  stopTriggerType: "duration",
+  stopTriggerType: 'duration',
   stopObservationCount: 10000000,
 };
 
@@ -173,23 +200,51 @@ window.inventoryHandler = (dataArray) => {
 let hasInit = false;
 
 function init() {
-  rfid.statusEvent = "statusHandler(%json)";
+  rfid.statusEvent = 'statusHandler(%json)';
   getReader();
 }
 
-export const attach = () => {
+let _onConnectionCallback;
+let _onDisconnectionCallback;
+
+/**
+ * attaches the library to the current component
+ * call detach when unmounting/onDestroy
+ * @param {function} onConnection - gets called on connection event
+ */
+export const attach = (callback) => {
+  _onConnectionCallback = callback;
+  let interCount = 0;
   //leave at the bottom
+  console.log('starting attach');
   const interInit = setInterval(() => {
     if (rfid) {
       if (hasInit) return;
       init();
-      console.log("initialized");
+      clearInterval(interInit);
+    }
+    interCount++;
+    if (interCount > 20) {
+      console.log('failed init');
+      _isConnected = false;
       clearInterval(interInit);
     }
   }, 300);
 };
 
-export const detach = () => {
+/**
+ *
+ * @returns {boolean}
+ */
+export const isConnected = () => _isConnected;
+
+/**
+ * detaches library from component resetting callbacks & properties
+ * @param {function} onDisconnection - called on disconnection event
+ */
+export const detach = (callback) => {
+  //TODO: reset props of rfid
+  _onDisconnectionCallback = callback;
   if (!hasInit) return;
   onEnumerate(() => {});
   onInventory(() => {});
@@ -198,12 +253,12 @@ export const detach = () => {
   onTagEvent(() => {});
   onTagLocate(() => {});
   disconnect();
-  console.log("detached");
+  console.log('detached');
   hasInit = false;
 };
 
 function getReader() {
-  console.log("searching for reader");
+  console.log('searching for reader');
   onEnumerate((readers) => {
     rfid.readerID = readers[0][0];
   });
@@ -214,7 +269,7 @@ function getReader() {
 function defaultProperties() {
   setProperties({
     beepOnRead: 1,
-    transport: "serial",
+    transport: 'serial',
     useSoftTrigger: 1,
   });
 }
@@ -240,82 +295,79 @@ export const disconnect = () => {
 /**
  * @function
  * @param {function} callback - function that gets called during "enumerate()" execution
-*/
-export const onEnumerate = (callback)=>{
-	window.enumRfid = callback
-	rfid.enumRFIDEvent = "enumRfid(%s);"
-}
+ */
+export const onEnumerate = (callback) => {
+  window.enumRfid = callback;
+  rfid.enumRFIDEvent = 'enumRfid(%s);';
+};
 
 /**
  * locates tag
- * @param {onTagLocateEvent} callback - function called when locating a tag 
+ * @param {onTagLocateEvent} callback - function called when locating a tag
  * @function
-*/
-export const onTagLocate = (callback)=>{
-	window.tagLocateHandler = callback
-}
+ */
+export const onTagLocate = (callback) => {
+  window.tagLocateHandler = callback;
+};
 
 /**
  * @function
  * locates a tag with the given rfid
-*/
-export const locateTag = (tagId) =>{
-	rfid.tagEvent = "tagLocateHandler(%json);"
-    rfid.antennaSelected = 1;
-    rfid.tagID = tagId
-    rfid.locateTag();
-}
-
-
+ */
+export const locateTag = (tagId) => {
+  if (!_isConnected) throw new Error('connection not initialized');
+  rfid.tagEvent = 'tagLocateHandler(%json);';
+  rfid.antennaSelected = 1;
+  rfid.tagID = tagId;
+  rfid.locateTag();
+};
 
 /**
  * performs inventory and triggers tagEvent
-*/
-export function startInventory(){
-	//setting options
-	rfid.stopTriggerType = performInventoryOpt.stopTriggerType
-	rfid.stopObservationCount = performInventoryOpt.stopObservationCount
+ */
+export function startInventory() {
+  if (!_isConnected) throw new Error('connection not initialized');
+  //setting options
+  rfid.stopTriggerType = performInventoryOpt.stopTriggerType;
+  rfid.stopObservationCount = performInventoryOpt.stopObservationCount;
 
-	rfid.tagEvent = "inventoryHandler(%json);"
-	rfid.performInventory()
+  rfid.tagEvent = 'inventoryHandler(%json);';
+  rfid.performInventory();
 }
 
 /***
  * @function
  * stops current operation
  */
-export const stop = ()=>{
-	try{
-		rfid.stop()
-	}catch(e){
-		console.error(e);
-	}
-}
+export const stop = () => {
+  try {
+    rfid.stop();
+  } catch (e) {
+    console.error(e);
+  }
+};
 
 /**
  * @function
  * @param {onInventoryEvent} callback - function that gets called during "startInventory()" execution
  */
-export const onInventory = (callback)=>{
-	onTagEvent = callback
-}
+export const onInventory = (callback) => {
+  onTagEvent = callback;
+};
 
-export const scanSingleRfid = ()=>{
-
-	//setting options
-	rfid.stopTriggerType = singleScanOpt.stopTriggerType
-	rfid.stopObservationCount = singleScanOpt.stopObservationCount
-	rfid.tagEvent = "scanSingleRfidHandler(%json);"
-	rfid.performInventory()
-}
+export const scanSingleRfid = () => {
+  if (!_isConnected) throw new Error('connection not initialized');
+  //setting options
+  rfid.stopTriggerType = singleScanOpt.stopTriggerType;
+  rfid.stopObservationCount = singleScanOpt.stopObservationCount;
+  rfid.tagEvent = 'scanSingleRfidHandler(%json);';
+  rfid.performInventory();
+};
 
 /**
  * @param {onScanSingleRfidEvent} callback - function that gets called during "scanSingleRfid" operation
  * @function
  */
-export const onScanSingleRfid = callback=>{
-	onSingleScanEvent = callback
-}
-
-
-
+export const onScanSingleRfid = (callback) => {
+  onSingleScanEvent = callback;
+};
