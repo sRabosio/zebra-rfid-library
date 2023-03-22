@@ -65,6 +65,9 @@ const statusDefinitions = [
   { errorCode: '2000', method: 'connect', internalCode: 'READER_LIST_EMPTY' },
 ];
 
+/** keeps track if the library is used to avoid conflicts */
+let _inUse = false;
+
 let statusManager = {
   //connects to reader
   CONNECTION_EVENT: (status) => {
@@ -74,9 +77,12 @@ let statusManager = {
     if (_onConnectionCallback) _onConnectionCallback();
   },
   READER_NOT_CONNECTED: (status) => {
-    hasInit = false;
     console.log(status.vendorMessage, status);
-    init();
+    getReader();
+  },
+  RECONNECT: () => {
+    disconnect();
+    getReader();
   },
   //disconnects from reader
   DISCONNECTION_EVENT: (status) => {
@@ -85,7 +91,6 @@ let statusManager = {
     if (_onDisconnectionCallback) _onDisconnectionCallback();
   },
   READER_LIST_EMPTY: (status) => {
-    hasInit = false;
     console.log(status.vendorMessage);
     getReader();
   },
@@ -194,29 +199,42 @@ window.inventoryHandler = (dataArray) => {
     inventoryData.reads.unshift(e);
   });
   const { tags, reads } = inventoryData;
-  onTagEvent(tags, reads);
+  onTagEvent([...tags], [...reads]);
 };
 
 let hasInit = false;
 
 function init() {
+  console.log('init');
   rfid.statusEvent = 'statusHandler(%json)';
   getReader();
 }
 
 let _onConnectionCallback;
 let _onDisconnectionCallback;
+let _onConnectionFailed;
 
 /**
  * attaches the library to the current component
  * call detach when unmounting/onDestroy
- * @param {function} onConnection - gets called on connection event
+ * NOTE: params are to be passed as an object
+ * @param {function} success - gets called on connection event
+ * @param {function} failure - gets called on connection event
  */
-export const attach = (callback) => {
-  _onConnectionCallback = callback;
+export const attach = ({ success, failure }) => {
+  console.log('attaching', new Date().getTime());
+  _onConnectionFailed = failure;
+  if (_inUse) {
+    console.log('in use true');
+    _onConnectionFailed();
+    return;
+  }
+  _onConnectionCallback = success;
+  console.log('lib free', new Date().getTime());
+  _inUse = true;
   let interCount = 0;
   //leave at the bottom
-  console.log('starting attach');
+  console.log('starting attach', new Date().getTime());
   const interInit = setInterval(() => {
     if (rfid) {
       if (hasInit) return;
@@ -227,15 +245,12 @@ export const attach = (callback) => {
     if (interCount > 20) {
       console.log('failed init');
       _isConnected = false;
+      _onConnectionFailed();
       clearInterval(interInit);
     }
   }, 300);
 };
 
-/**
- *
- * @returns {boolean}
- */
 export const isConnected = () => _isConnected;
 
 /**
@@ -255,6 +270,7 @@ export const detach = (callback) => {
   disconnect();
   console.log('detached');
   hasInit = false;
+  _inUse = false;
 };
 
 function getReader() {
@@ -315,6 +331,7 @@ export const onTagLocate = (callback) => {
  * locates a tag with the given rfid
  */
 export const locateTag = (tagId) => {
+  if (!tagId) return;
   if (!_isConnected) throw new Error('connection not initialized');
   rfid.tagEvent = 'tagLocateHandler(%json);';
   rfid.antennaSelected = 1;
