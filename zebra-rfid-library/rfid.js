@@ -147,44 +147,36 @@ let onSingleScanEvent = () => {};
 window.enumRfid = () => {};
 
 const singleScanOpt = {
-  stopTriggerType: 'tagObservation',
+  stopTriggerType: "tagObservation",
   stopObservationCount: 1,
+  reportUniqueTags: 1,
 };
 
 const performInventoryOpt = {
-  stopTriggerType: 'duration',
-  stopObservationCount: 10000000,
+  stopTriggerType: "duration",
+  stopObservationCount: 9999999,
+  reportUniqueTags: 1,
+  reportTrigger: 1,
 };
 
 /**
- *
- * @param {object} props - rfid object properties
  * @function
  *
- * use effect highly recommended
+ * @param {object} props - rfid object properties
+ *
+ * @returns {boolean} operation success/failure
  *
  * for the list of parameters see official zebra documentation: https://techdocs.zebra.com/enterprise-browser/3-3/api/re2x/rfid/
  */
 export const setProperties = (props) => {
-  const interInit = setInterval(() => {
-    if (rfid) {
-      rfid = Object.assign(rfid, props);
-      clearInterval(interInit);
-    }
-  }, 300);
-};
-
-const inventoryData = {
-  tags: [],
-  reads: new Array(50),
-  chunk(newChunk) {
-    this.reads = new Array(newChunk);
-  },
-  addTag(newTag) {
-    const condition = this.tags.find((e) => e.tagID === newTag.tagID);
-    if (condition) return;
-    this.tags.push(newTag);
-  },
+  const rfid = window.rfid;
+  if (rfid) {
+    window.rfid = Object.assign(rfid, props);
+    console.log("setProps", { props, rfid });
+    return true;
+  }
+  console.log("setProps failed");
+  return false;
 };
 
 window.scanSingleRfidHandler = (dataArray) => {
@@ -193,20 +185,14 @@ window.scanSingleRfidHandler = (dataArray) => {
 };
 
 window.inventoryHandler = (dataArray) => {
-  dataArray.TagData.forEach((e) => {
-    inventoryData.addTag(e);
-    inventoryData.reads.pop();
-    inventoryData.reads.unshift(e);
-  });
-  const { tags, reads } = inventoryData;
-  onTagEvent([...tags], [...reads]);
+  onTagEvent([...dataArray.TagData]);
 };
 
 let hasInit = false;
 
 function init() {
-  console.log('init');
-  rfid.statusEvent = 'statusHandler(%json)';
+  console.log("init");
+  rfid.statusEvent = "statusHandler(%json)";
   getReader();
 }
 
@@ -222,20 +208,21 @@ let _onConnectionFailed;
  * @param {function} failure - gets called on connection event
  */
 export const attach = ({ success, failure }) => {
-  console.log('attaching', new Date().getTime());
+  console.log("attaching", new Date().getTime());
   _onConnectionFailed = failure;
   if (_inUse) {
-    console.log('in use true');
-    _onConnectionFailed();
+    console.log("in use true");
+    if (_onConnectionFailed) _onConnectionFailed();
     return;
   }
   _onConnectionCallback = success;
-  console.log('lib free', new Date().getTime());
+  console.log("lib free", new Date().getTime());
   _inUse = true;
   let interCount = 0;
   //leave at the bottom
-  console.log('starting attach', new Date().getTime());
+  console.log("starting attach", new Date().getTime());
   const interInit = setInterval(() => {
+    const rfid = window.rfid;
     if (rfid) {
       if (hasInit) return;
       init();
@@ -243,7 +230,7 @@ export const attach = ({ success, failure }) => {
     }
     interCount++;
     if (interCount > 20) {
-      console.log('failed init');
+      console.log("failed init");
       _isConnected = false;
       _onConnectionFailed();
       clearInterval(interInit);
@@ -268,13 +255,13 @@ export const detach = (callback) => {
   onTagEvent(() => {});
   onTagLocate(() => {});
   disconnect();
-  console.log('detached');
+  console.log("detached");
   hasInit = false;
   _inUse = false;
 };
 
 function getReader() {
-  console.log('searching for reader');
+  console.log("searching for reader");
   onEnumerate((readers) => {
     rfid.readerID = readers[0][0];
   });
@@ -283,9 +270,10 @@ function getReader() {
 }
 
 function defaultProperties() {
+  console.log("before default");
   setProperties({
     beepOnRead: 1,
-    transport: 'serial',
+    transport: "serial",
     useSoftTrigger: 1,
   });
 }
@@ -314,7 +302,7 @@ export const disconnect = () => {
  */
 export const onEnumerate = (callback) => {
   window.enumRfid = callback;
-  rfid.enumRFIDEvent = 'enumRfid(%s);';
+  rfid.enumRFIDEvent = "enumRfid(%s);";
 };
 
 /**
@@ -332,8 +320,8 @@ export const onTagLocate = (callback) => {
  */
 export const locateTag = (tagId) => {
   if (!tagId) return;
-  if (!_isConnected) throw new Error('connection not initialized');
-  rfid.tagEvent = 'tagLocateHandler(%json);';
+  if (!_isConnected) throw new Error("connection not initialized");
+  rfid.tagEvent = "tagLocateHandler(%json);";
   rfid.antennaSelected = 1;
   rfid.tagID = tagId;
   rfid.locateTag();
@@ -343,12 +331,10 @@ export const locateTag = (tagId) => {
  * performs inventory and triggers tagEvent
  */
 export function startInventory() {
-  if (!_isConnected) throw new Error('connection not initialized');
-  //setting options
-  rfid.stopTriggerType = performInventoryOpt.stopTriggerType;
-  rfid.stopObservationCount = performInventoryOpt.stopObservationCount;
-
-  rfid.tagEvent = 'inventoryHandler(%json);';
+  if (!_isConnected) throw new Error("connection not initialized");
+  console.log("before set props", performInventoryOpt);
+  setProperties({ ...performInventoryOpt });
+  rfid.tagEvent = "inventoryHandler(%json);";
   rfid.performInventory();
 }
 
