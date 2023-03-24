@@ -154,7 +154,7 @@ const singleScanOpt = {
 
 const performInventoryOpt = {
   stopTriggerType: "duration",
-  stopObservationCount: 9999999,
+  stopObservationCount: 999999,
   reportUniqueTags: 1,
   reportTrigger: 1,
 };
@@ -188,6 +188,14 @@ window.inventoryHandler = (dataArray) => {
   onTagEvent([...dataArray.TagData]);
 };
 
+window.tagLocateHandler = (data) => {
+  if (_tagLocateCallback) _tagLocateCallback(data);
+};
+
+window.enumRfid = (data) => {
+  if (_enumerateCallback) _enumerateCallback(data);
+};
+
 let hasInit = false;
 
 function init() {
@@ -199,6 +207,8 @@ function init() {
 let _onConnectionCallback;
 let _onDisconnectionCallback;
 let _onConnectionFailed;
+let _tagLocateCallback;
+let _enumerateCallback;
 
 /**
  * attaches the library to the current component
@@ -248,12 +258,12 @@ export const detach = (callback) => {
   //TODO: reset props of rfid
   _onDisconnectionCallback = callback;
   if (!hasInit) return;
-  onEnumerate(() => {});
-  onInventory(() => {});
-  onScanSingleRfid(() => {});
-  onSingleScanEvent(() => {});
-  onTagEvent(() => {});
-  onTagLocate(() => {});
+  onEnumerate(null);
+  onInventory(null);
+  onScanSingleRfid(null);
+  onSingleScanEvent(null);
+  onTagEvent(null);
+  onTagLocate(null);
   disconnect();
   console.log("detached");
   hasInit = false;
@@ -301,7 +311,7 @@ export const disconnect = () => {
  * @param {function} callback - function that gets called during "enumerate()" execution
  */
 export const onEnumerate = (callback) => {
-  window.enumRfid = callback;
+  _enumerateCallback = callback;
   rfid.enumRFIDEvent = "enumRfid(%s);";
 };
 
@@ -311,7 +321,7 @@ export const onEnumerate = (callback) => {
  * @function
  */
 export const onTagLocate = (callback) => {
-  window.tagLocateHandler = callback;
+  _tagLocateCallback = callback;
 };
 
 /**
@@ -332,7 +342,6 @@ export const locateTag = (tagId) => {
  */
 export function startInventory() {
   if (!_isConnected) throw new Error("connection not initialized");
-  console.log("before set props", performInventoryOpt);
   setProperties({ ...performInventoryOpt });
   rfid.tagEvent = "inventoryHandler(%json);";
   rfid.performInventory();
@@ -342,13 +351,7 @@ export function startInventory() {
  * @function
  * stops current operation
  */
-export const stop = () => {
-  try {
-    rfid.stop();
-  } catch (e) {
-    console.error(e);
-  }
-};
+export const stop = () => rfid.stop();
 
 /**
  * @function
@@ -359,11 +362,10 @@ export const onInventory = (callback) => {
 };
 
 export const scanSingleRfid = () => {
-  if (!_isConnected) throw new Error('connection not initialized');
+  if (!_isConnected) throw new Error("connection not initialized");
   //setting options
-  rfid.stopTriggerType = singleScanOpt.stopTriggerType;
-  rfid.stopObservationCount = singleScanOpt.stopObservationCount;
-  rfid.tagEvent = 'scanSingleRfidHandler(%json);';
+  setProperties({ ...singleScanOpt });
+  rfid.tagEvent = "scanSingleRfidHandler(%json);";
   rfid.performInventory();
 };
 
