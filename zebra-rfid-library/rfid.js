@@ -6,14 +6,18 @@
  */
 
 /**
+ * @callback onEnumerateEvent
+ * @param {object[]} readers - readers found
+ */
+
+/**
  * @callback onInventoryEvent
- * @param {object[]} tags - individual tags found
- * @param {object[]} reads - last 50 reads
+ * @param {object[]} data - data received from inventory operation
  */
 
 /**
  * @callback onTagLocateEvent
- * @param {number} distance - the distance between the reader and the tag, goes from 0 to 100
+ * @param {number} data - data returned by library, use TagLocate property to get the distance
  */
 
 /**
@@ -65,10 +69,10 @@ const statusDefinitions = [
   { errorCode: '2000', method: 'connect', internalCode: 'READER_LIST_EMPTY' },
 ];
 
-/** keeps track if the library is used to avoid conflicts */
+//keeps track if the library is used to avoid conflicts
 let _inUse = false;
 
-let statusManager = {
+const statusManager = {
   //connects to reader
   CONNECTION_EVENT: (status) => {
     defaultProperties();
@@ -130,17 +134,6 @@ window.statusHandler = (status) => {
   else console.log('non error status', status);
 };
 
-/**
- *
- * @param {object} handlers - object containing error handlers
- * @function
- * syntax:
- * key:{string}error, value:{function}handler
- */
-export const addStatusHandlers = (handlers) => {
-  statusManager = Object.assign(statusManager, handlers);
-};
-
 //definitions
 let onTagEvent = () => {};
 let onSingleScanEvent = () => {};
@@ -166,7 +159,7 @@ const performInventoryOpt = {
  *
  * @returns {boolean} operation success/failure
  *
- * for the list of parameters see official zebra documentation: https://techdocs.zebra.com/enterprise-browser/3-3/api/re2x/rfid/
+ *@link for the list of parameters see official zebra documentation:  https://techdocs.zebra.com/enterprise-browser/3-3/api/re2x/rfid/
  */
 export const setProperties = (props) => {
   const rfid = window.rfid;
@@ -197,9 +190,11 @@ window.enumRfid = (data) => {
 };
 
 let hasInit = false;
+let _rfidDefaults;
 
 function init() {
   console.log("init");
+  _rfidDefaults = { ...window.rfid };
   rfid.statusEvent = "statusHandler(%json)";
   getReader();
 }
@@ -264,6 +259,8 @@ export const detach = (callback) => {
   onSingleScanEvent(null);
   onTagEvent(null);
   onTagLocate(null);
+  setProperties({ ..._rfidDefaults });
+  defaultProperties();
   disconnect();
   console.log("detached");
   hasInit = false;
@@ -308,7 +305,7 @@ export const disconnect = () => {
 
 /**
  * @function
- * @param {function} callback - function that gets called during "enumerate()" execution
+ * @param {onEnumerateEvent} callback - function that gets called during "enumerate()" execution
  */
 export const onEnumerate = (callback) => {
   _enumerateCallback = callback;
@@ -316,7 +313,6 @@ export const onEnumerate = (callback) => {
 };
 
 /**
- * locates tag
  * @param {onTagLocateEvent} callback - function called when locating a tag
  * @function
  */
@@ -361,6 +357,9 @@ export const onInventory = (callback) => {
   onTagEvent = callback;
 };
 
+/**
+ * Scans a single rfid tag
+ */
 export const scanSingleRfid = () => {
   if (!_isConnected) throw new Error("connection not initialized");
   //setting options
