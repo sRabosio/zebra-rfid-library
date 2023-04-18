@@ -139,26 +139,25 @@ let onTagEvent = () => {};
 let onSingleScanEvent = () => {};
 window.enumRfid = () => {};
 
-const singleScanOpt = {
+let singleScanOpt = {
   stopTriggerType: "tagObservation",
   stopObservationCount: 1,
   reportUniqueTags: 1,
+  startTriggerType: "immediate"
 };
 
-const performInventoryOpt = {
+let performInventoryOpt = {
   stopTriggerType: "duration",
   stopObservationCount: 999999,
   reportUniqueTags: 1,
   reportTrigger: 1,
+  startTriggerType: "immediate"
 };
 
 /**
  * @function
- *
  * @param {object} props - rfid object properties
- *
  * @returns {boolean} operation success/failure
- *
  *@link for the list of parameters see official zebra documentation:  https://techdocs.zebra.com/enterprise-browser/3-3/api/re2x/rfid/
  */
 export const setProperties = (props) => {
@@ -209,6 +208,7 @@ let _enumerateCallback;
  * attaches the library to the current component
  * call detach when unmounting/onDestroy
  * NOTE: params are to be passed as an object
+ * @function 
  * @param {function} success - gets called on connection event
  * @param {function} failure - gets called on connection event
  */
@@ -247,6 +247,7 @@ export const isConnected = () => _isConnected;
 
 /**
  * detaches library from component resetting callbacks & properties
+ * @function
  * @param {function} onDisconnection - called on disconnection event
  */
 export const detach = (callback) => {
@@ -321,8 +322,8 @@ export const onTagLocate = (callback) => {
 };
 
 /**
- * @function
  * locates a tag with the given rfid
+ * @function
  */
 export const locateTag = (tagId) => {
   if (!tagId) return;
@@ -330,6 +331,7 @@ export const locateTag = (tagId) => {
   rfid.tagEvent = "tagLocateHandler(%json);";
   rfid.antennaSelected = 1;
   rfid.tagID = tagId;
+  rfid.startTriggerType= "immediate"
   rfid.locateTag();
 };
 
@@ -341,6 +343,14 @@ export function startInventory() {
   setProperties({ ...performInventoryOpt });
   rfid.tagEvent = "inventoryHandler(%json);";
   rfid.performInventory();
+}
+
+export const setInventoryOpt = options=>{
+  performInventoryOpt = {...performInventoryOpt, ...options}
+}
+
+export const setSingleScanOpt = options=>{
+  singleScanOpt = {...singleScanOpt, ...options}
 }
 
 /***
@@ -359,6 +369,7 @@ export const onInventory = (callback) => {
 
 /**
  * Scans a single rfid tag
+ * @function
  */
 export const scanSingleRfid = () => {
   if (!_isConnected) throw new Error("connection not initialized");
@@ -369,8 +380,8 @@ export const scanSingleRfid = () => {
 };
 
 /**
- * @param {onScanSingleRfidEvent} callback - function that gets called during "scanSingleRfid" operation
  * @function
+ * @param {onScanSingleRfidEvent} callback - function that gets called during "scanSingleRfid" operation
  */
 export const onScanSingleRfid = (callback) => {
   onSingleScanEvent = callback;
