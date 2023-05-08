@@ -243,6 +243,10 @@ export const attach = ({ success, failure }) => {
   }, 300);
 };
 
+/**
+ * 
+ * @returns {boolean} true if the library has initialized correctly
+ */
 export const isConnected = () => _isConnected;
 
 /**
@@ -324,6 +328,7 @@ export const onTagLocate = (callback) => {
 /**
  * locates a tag with the given rfid
  * @function
+ * @param {string} tagId - rfid tag to locate
  */
 export const locateTag = (tagId) => {
   if (!tagId) return;
@@ -345,10 +350,20 @@ export function startInventory() {
   rfid.performInventory();
 }
 
+/**
+ * 
+ * @param {object} options - new inventory options 
+ * check out all the options available  on {@link https://techdocs.zebra.com/enterprise-browser/3-3/api/re2x/rfid/}
+ */
 export const setInventoryOpt = options=>{
   performInventoryOpt = {...performInventoryOpt, ...options}
 }
 
+/**
+ * 
+ * @param {object} options - new single scan options 
+ * check out all the options available  on {@link https://techdocs.zebra.com/enterprise-browser/3-3/api/re2x/rfid/}
+ */
 export const setSingleScanOpt = options=>{
   singleScanOpt = {...singleScanOpt, ...options}
 }
