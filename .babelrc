@@ -7,7 +7,8 @@
         "corejs": 3,
         "shippedProposals": true
       }
-    ]
+    ],
+    "@babel/preset-flow"
   ],
   "env": {
     "production": {

@@ -6,20 +6,21 @@
   "scripts": {
     "clean": "rimraf lib build",
     "compile": "babel -d lib/ zebra-rfid-library/",
-    "prepublish": "npm run clean && npm run compile",
+    "prepublish": "npm run clean && npm run compile ",
     "lint": "eslint zebra-rfid-library",
     "test": "npm run compile && mocha ./lib --require ignore-styles --compilers js:babel-core/register --recursive",
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "flow": "flow"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/sRabosio/zebra-rfid"
   },
   "devDependencies": {
-    "@babel/cli": "^7.20.7",
-    "@babel/core": "^7.20.12",
+    "@babel/cli": "^7.21.5",
+    "@babel/core": "^7.22.1",
     "@babel/eslint-parser": "^7.19.1",
     "@babel/plugin-proposal-class-properties": "^7.18.6",
     "@babel/plugin-proposal-decorators": "^7.20.13",
@@ -46,7 +47,7 @@
     "@babel/plugin-transform-spread": "^7.20.7",
     "@babel/plugin-transform-strict-mode": "^7.18.6",
     "@babel/preset-env": "^7.20.2",
-    "@babel/preset-flow": "^7.18.6",
+    "@babel/preset-flow": "^7.21.4",
     "@babel/register": "^7.18.9",
     "@types/react": "^18.0.27",
     "@types/react-dom": "^18.0.10",
@@ -67,6 +68,7 @@
     "eslint-plugin-react": "^7.32.2",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-webpack-plugin": "^4.0.0",
+    "flow-bin": "^0.207.0",
     "jsdoc": "^4.0.2",
     "jsdoc-to-markdown": "^8.0.0",
     "mocha": "10.2.0",
