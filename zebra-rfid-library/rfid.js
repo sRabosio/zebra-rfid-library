@@ -25,102 +25,17 @@
  * @param {object} tag - tag found
  */
 
-/**
- * @typedef {Object} statusDefinition
- * @param {string} name - name of the status to be associated with statusManager
- * @param {string} errorCode
- * @param {string} vendorMessage
- * @param {string} method
- * @param {string} internalCode - unique assigned code with which to identify associated callbacks
- */
 
-/**
- * error definitions to properly identify errors
- * @type {statusDefinition[]}
- * @ignore
- */
-const statusDefinitions = [
-  {
-    name: 'CONNECTION_EVENT',
-    errorCode: '1000',
-    vendorMessage: 'CONNECTION_EVENT',
-    internalCode: 'CONNECTION_EVENT',
-  },
-  {
-    name: 'DISCONNECTION_EVENT',
-    errorCode: '1000',
-    vendorMessage: 'DISCONNECTION_EVENT',
-    internalCode: 'DISCONNECTION_EVENT',
-  },
-  {
-    name: 'READER_NOT_CONNECTED',
-    errorCode: '2003',
-    vendorMessage: 'Reader Not Connected',
-    internalCode: 'READER_NOT_CONNECTED',
-  },
-  {
-    name: 'INVENTORY_OPERATION_FAILURE',
-    errorCode: '2005',
-    method: 'performInventory',
-    vendorMessage: 'RFID_CHARGING_COMMAND_NOT_ALLOWED-Charging',
-  },
-  { name: 'LOCATE_NO_TAG', errorCode: '2004', method: 'locateTag' },
-  { errorCode: '2004', method: 'connect', internalCode: 'RECONNECT' },
-  { errorCode: '2000', method: 'connect', internalCode: 'READER_LIST_EMPTY' },
-];
 
 //keeps track if the library is used to avoid conflicts
 let _inUse = false;
 
-const statusManager = {
-  //connects to reader
-  CONNECTION_EVENT: (status) => {
-    defaultProperties();
-    _isConnected = true;
-    console.log('initialized with status', status);
-    if (_onConnectionCallback) _onConnectionCallback();
-  },
-  READER_NOT_CONNECTED: (status) => {
-    console.log(status.vendorMessage, status);
-    getReader();
-  },
-  RECONNECT: () => {
-    disconnect();
-    getReader();
-  },
-  //disconnects from reader
-  DISCONNECTION_EVENT: (status) => {
-    _isConnected = false;
-    console.log('disconnected with status', status);
-    if (_onDisconnectionCallback) _onDisconnectionCallback();
-  },
-  READER_LIST_EMPTY: (status) => {
-    console.log(status.vendorMessage);
-    getReader();
-  },
-};
+
 
 let _isConnected = false;
 
-//gets error name to be used as key in statusManager
-const getError = (status) =>
-  statusDefinitions
-    .filter(
-      (e) =>
-        e.errorCode === status.errorCode &&
-        (e.vendorMessage
-          ? status.vendorMessage.includes(e.vendorMessage)
-          : true) &&
-        (e.method ? status.method === e.method : true)
-    )
-    .sort((a, b) => {
-      if (a.vendorMessage.length > b.vendorMessage.length) return -1;
-      if (a.vendorMessage.length < b.vendorMessage.length) return 1;
-      return 0;
-    })[0]?.internalCode;
-
 window.statusHandler = (status) => {
-  console.log('before status callback', {
+  console.log("before status callback", {
     status,
     getError: getError(status),
     _onConnectionCallback,
@@ -131,8 +46,9 @@ window.statusHandler = (status) => {
     console.warn(
       status.vendorMessage + status.errorCode + status.vendorMessage
     );
-  else console.log('non error status', status);
+  else console.log("non error status", status);
 };
+
 
 //definitions
 let onTagEvent = () => {};
