@@ -8,12 +8,12 @@
  * @param {string} method
  * @param {string} internalCode - unique assigned code with which to identify associated callbacks
  */
-export type StatusDefintion = {
-    name?: string,
-    errorCode: string,
-    vendorMessage?: string,
-    method?: string,
-    internalCode?: string
+export type StatusDefinition = {
+  name?: string,
+  errorCode: string,
+  vendorMessage?: string,
+  method?: string,
+  internalCode?: string,
 };
 
 

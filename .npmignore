@@ -1,5 +1,6 @@
 src/
 =/
+out2/
 build/
 /zebra-rfid-library/*
 .babelrc

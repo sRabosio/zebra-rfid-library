@@ -29,3 +29,4 @@ src/*
 *.old
 lib/*
 out/
+out2/

@@ -57,5 +57,5 @@ export type Settings = Partial<{
   transpitPower: number,
   transport: string,
   useAccessFilter: number,
-  useSoftTrigget: number,
+  useSoftTrigger: number,
 }>;

@@ -9,7 +9,7 @@
     "prepublish": "npm run clean && npm run compile ",
     "lint": "eslint zebra-rfid-library",
     "test": "npm run compile && mocha ./lib --require ignore-styles --compilers js:babel-core/register --recursive",
-    "dev": "vite",
+    "dev": "flow-remove-types ./ -d out2/ && vite out2/",
     "build": "vite build",
     "preview": "vite preview",
     "flow": "flow"
@@ -69,6 +69,7 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-webpack-plugin": "^4.0.0",
     "flow-bin": "^0.207.0",
+    "flow-remove-types": "^2.207.0",
     "jsdoc": "^4.0.2",
     "jsdoc-to-markdown": "^8.0.0",
     "mocha": "10.2.0",
@@ -79,6 +80,7 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.21.0",
+    "@bunchtogether/vite-plugin-flow": "^1.0.2",
     "core-js": "^3.29.1",
     "zebra-rfid-library": "^0.3.4-alpha"
   }
