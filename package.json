@@ -7,10 +7,10 @@
     "clean": "rimraf lib build",
     "compile": "babel -d lib/ zebra-rfid-library/",
     "prepublish": "npm run clean && npm run compile",
-    "lint": "eslint zebra-rfid-library",
     "test": "npm run compile && mocha ./lib --require ignore-styles --compilers js:babel-core/register --recursive",
     "dev": "vite",
-    "build": "vite build",
+    "build": "tsc && vite build",
+    "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
   "repository": {
@@ -18,6 +18,10 @@
     "url": "https://github.com/sRabosio/zebra-rfid"
   },
   "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^5.59.0",
+    "@typescript-eslint/parser": "^5.59.0",
+    "eslint-plugin-react-refresh": "^0.3.4",
+    "typescript": "^5.0.2",
     "@babel/cli": "^7.20.7",
     "@babel/core": "^7.20.12",
     "@babel/eslint-parser": "^7.19.1",
