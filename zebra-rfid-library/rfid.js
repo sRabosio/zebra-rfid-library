@@ -1,5 +1,4 @@
 //@flow
-
 import { type StatusEvent } from "./types/StatusEvent";
 import { type StatusDefinition } from "./types/StatusDefinition";
 import { type TagData } from "./types/TagData";

@@ -6,7 +6,7 @@
     "prettier",
     "plugin:react-hooks/recommended"
   ],
-  "plugins": ["flowtype", "babel", "prettier"],
+  "plugins": ["flowtype", "babel", "prettier", "ft-flow"],
   "parserOptions": {
     "requireConfigFile": false,
     "ecmaVersion": 8,
@@ -46,8 +46,7 @@
     "import/no-unresolved": "off",
     "no-nested-ternary": "warn",
     "no-plusplus": "off",
-    "eqeqeq": "warn",
-    "no-restricted-exports": "off",
+    "eqeqeq": "warn"
     "no-lonely-if": "off",
     "import/order": "off",
     "prettier/prettier": "off",
