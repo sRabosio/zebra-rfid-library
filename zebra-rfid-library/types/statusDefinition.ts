@@ -1,5 +1,3 @@
-//@flow strict
-
 /**
  * @typedef {Object} statusDefinition
  * @param {string} name - name of the status to be associated with statusManager

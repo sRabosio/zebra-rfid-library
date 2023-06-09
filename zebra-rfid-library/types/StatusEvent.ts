@@ -1,7 +1,5 @@
-//@flow strict
-
 export type StatusEvent = Partial<{
   method: string,
-  errorCode: number,
+  errorCode: string,
   vendorMessage: string,
 }>;

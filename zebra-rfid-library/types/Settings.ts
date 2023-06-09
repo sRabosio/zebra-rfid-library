@@ -1,5 +1,4 @@
-//@flow strict
-
+//settings are available for the user in contrast with ZebraRfidFunctions
 export type Settings = Partial<{
   beepOnRead: number,
   antennaSelected: number,

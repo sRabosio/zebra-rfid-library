@@ -1,4 +1,3 @@
-//@flow strict
 
 export type EnumRfidResult = {
   numberOfDevices: number,
