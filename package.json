@@ -1,12 +1,12 @@
 {
   "name": "zebra-rfid-library",
   "private": false,
-  "version": "0.4.2-alpha",
+  "version": "1.0.0",
   "main": "lib/rfid.js",
   "scripts": {
     "clean": "rimraf lib build",
-    "compile": "babel -d lib/ zebra-rfid-library/",
-    "prepublish": "npm run clean && npm run compile",
+    "compile": "tsc zebra-rfid-library/rfid.ts --outDir lib/",
+    "prepublish": "tsc && npm run clean && npm run compile",
     "test": "npm run compile && mocha ./lib --require ignore-styles --compilers js:babel-core/register --recursive",
     "dev": "vite",
     "build": "tsc && vite build",

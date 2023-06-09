@@ -1,9 +1,9 @@
 //@flow
 import { type StatusEvent } from "./types/StatusEvent";
-import { type StatusDefinition } from "./types/StatusDefinition";
 import { type TagData } from "./types/TagData";
 import { type Settings } from "./types/Settings";
 import { type EnumRfidResult } from "./types/EnumRfidResult";
+import { StatusDefinition } from "./types/statusDefinition";
 
 /*
  *		---NOTES---
@@ -126,7 +126,7 @@ const statusDefinitions: StatusDefinition[] = [
 let _inUse = false;
 let _isConnected = false;
 let _onInventory: ((data: TagData[]) => void) | null;
-let _onSingleScanEvent: ((TagData) => void) | null;
+let _onSingleScanEvent: ((TagData: TagData) => void) | null;
 
 let singleScanOpt: Settings = {
   stopTriggerType: "tagObservation",
@@ -181,8 +181,10 @@ export const setProperties = (props: Settings): boolean => {
   return false;
 };
 
-window.scanSingleRfidHandler = (dataArray) => {
-  if (_onSingleScanEvent) _onSingleScanEvent(dataArray.TagData.at(0));
+window.scanSingleRfidHandler = (dataArray: {TagData:TagData[]}) => {
+  const data = dataArray.TagData.at(0)
+  if(data)
+  if (_onSingleScanEvent) _onSingleScanEvent(data);
   stop();
 };
 
@@ -190,16 +192,16 @@ window.inventoryHandler = (dataArray: TagOperationData) => {
   if (_onInventory) _onInventory([...dataArray.TagData]);
 };
 
-window.tagLocateHandler = (data) => {
+window.tagLocateHandler = (data:TagLocateData) => {
   if (_tagLocateCallback) _tagLocateCallback(data);
 };
 
-window.enumRfid = (data) => {
+window.enumRfid = (data:EnumRfidResult[]) => {
   if (_onEnumerate) _onEnumerate(data);
 };
 
 let hasInit = false;
-let _rfidDefaults;
+let _rfidDefaults: Settings;
 
 function init() {
   console.log("init");
@@ -288,7 +290,7 @@ export const detach = (callback: () => void): void => {
 
 function getReader() {
   console.log("searching for reader");
-  enumerate((readers: EnumRfidResult[]) => {
+  enumerate((readers: any) => {
     window.rfid.readerID = readers[0][0];
   })
   window.rfid.connect();

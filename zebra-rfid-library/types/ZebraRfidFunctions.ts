@@ -6,5 +6,6 @@ export type ZebraRfidFunctions = {
     locateTag: ()=>void,
     performInventory: ()=>void,
     stop: ()=>void,
-    enumRFIDEvent: string
+    enumRFIDEvent: string,
+    statusEvent: string
 };
