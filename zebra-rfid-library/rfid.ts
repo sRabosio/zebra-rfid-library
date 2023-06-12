@@ -56,9 +56,6 @@ window.statusHandler = (status: StatusEvent) => {
     );
   else console.log("non error status", status);
 };
-
-window.enumRfid = () => {};
-
 /* CONST */
 
 const statusManager: { [key: string]: (status: StatusEvent) => void } = {
@@ -185,7 +182,7 @@ window.scanSingleRfidHandler = (dataArray: {TagData:TagData[]}) => {
   const data = dataArray.TagData.at(0)
   if(data)
   if (_onSingleScanEvent) _onSingleScanEvent(data);
-  stop();
+  resetCallbacks()
 };
 
 window.inventoryHandler = (dataArray: TagOperationData) => {
@@ -198,6 +195,7 @@ window.tagLocateHandler = (data:TagLocateData) => {
 
 window.enumRfid = (data:EnumRfidResult[]) => {
   if (_onEnumerate) _onEnumerate(data);
+  resetCallbacks()
 };
 
 let hasInit = false;
@@ -329,14 +327,6 @@ export const disconnect = () => {
 
 
 /**
- * @param {onTagLocateEvent} callback - function called when locating a tag
- * @function
- */
-export const onTagLocate = () => {
-  
-};
-
-/**
  * locates a tag with the given rfid
  * @function
  * @param {string} tagId - rfid tag to locate
@@ -386,12 +376,17 @@ export const setSingleScanOpt = (options: Settings) => {
  * @function
  * stops current operation
  */
-export const stop = (): void => {
+export const stop = () => {
+  resetCallbacks()
+  window.rfid.stop();
+}
+
+const resetCallbacks = ()=>{
   _onInventory = null
    _tagLocateCallback = null
  _onEnumerate = null
  _onSingleScanEvent = null
-  window.rfid.stop();}
+}
 
 /**
  * Scans a single rfid tag
