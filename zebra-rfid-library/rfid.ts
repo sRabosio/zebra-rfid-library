@@ -123,7 +123,7 @@ const statusDefinitions: StatusDefinition[] = [
 let _inUse = false;
 let _isConnected = false;
 let _onInventory: ((data: TagData[]) => void) | null;
-let _onSingleScanEvent: ((TagData: TagData) => void) | null;
+let _onSingleScan: ((TagData: TagData) => void) | null;
 
 let singleScanOpt: Settings = {
   stopTriggerType: "tagObservation",
@@ -181,7 +181,7 @@ export const setProperties = (props: Settings): boolean => {
 window.scanSingleRfidHandler = (dataArray: {TagData:TagData[]}) => {
   const data = dataArray.TagData.at(0)
   if(data)
-  if (_onSingleScanEvent) _onSingleScanEvent(data);
+  if (_onSingleScan) _onSingleScan(data);
   resetCallbacks()
 };
 
@@ -260,6 +260,41 @@ export const attach = ({
 };
 
 /**
+ * @function
+ * @param {onEnumerateEvent} callback - function that gets called during "enumerate()" execution
+ */
+export const onEnumerate = (callback: ((data: EnumRfidResult[]) => void) | null) => {
+  _onEnumerate = callback;
+  
+};
+
+/**
+ * @function
+ * @param {onInventoryEvent} callback - function that gets called during "startInventory()" execution
+ */
+export const onInventory = (callback: ((data: TagData[]) => void) | null) => {
+  _onInventory = callback;
+};
+
+
+/**
+ * @function
+ * @param {onScanSingleRfidEvent} callback - function that gets called during "scanSingleRfid" operation
+ */
+export const onScanSingleRfid = (callback: ((data: TagData) => void) | null) => {
+  _onSingleScan = callback;
+};
+
+/**
+ * @param {onTagLocateEvent} callback - function called when locating a tag
+ * @function
+ */
+export const onTagLocate = (callback: ((data: TagLocateData) => void)| null) => {
+  _tagLocateCallback = callback;
+};
+
+
+/**
  *
  * @returns {boolean} true if the library has initialized correctly
  */
@@ -275,9 +310,9 @@ export const detach = (callback: () => void): void => {
   _onDisconnectionCallback = callback;
   if (!hasInit) return;
   _onEnumerate = null
-  _onSingleScanEvent = null
+  _onSingleScan = null
   _onInventory = null;
-  _onSingleScanEvent = null
+  _onSingleScan = null
   setProperties({ ..._rfidDefaults });
   defaultProperties();
   disconnect();
@@ -288,9 +323,10 @@ export const detach = (callback: () => void): void => {
 
 function getReader() {
   console.log("searching for reader");
-  enumerate((readers: any) => {
+  onEnumerate((readers: any) => {
     window.rfid.readerID = readers[0][0];
   })
+  enumerate()
   window.rfid.connect();
 }
 
@@ -308,9 +344,8 @@ function defaultProperties() {
  * @returns {number} number of rfid scanners found
  * @function
  */
-export const enumerate = (callback: ((data: EnumRfidResult[]) => void) | null): void => {
-  if(callback)
-  _onEnumerate = callback;
+export const enumerate = (): void => {
+  window.rfid.enumRFIDEvent = "enumRfid(%s);";
   window.rfid.enumRFIDEvent = "enumRfid(%s);";
   window.rfid.enumerate();}
 
@@ -331,11 +366,9 @@ export const disconnect = () => {
  * @function
  * @param {string} tagId - rfid tag to locate
  */
-export const locateTag = (tagId: string, callback: ((data: TagLocateData) => void)| null) => {
+export const locateTag = (tagId: string, ) => {
   if (!_isConnected) throw new Error("connection not initialized");
   if (!tagId) throw new Error ("invalid tag id");
-  if(callback)
-  _tagLocateCallback = callback;
   window.rfid.tagEvent = "tagLocateHandler(%json);";
   window.rfid.antennaSelected = 1;
   window.rfid.tagID = tagId;
@@ -346,9 +379,8 @@ export const locateTag = (tagId: string, callback: ((data: TagLocateData) => voi
 /**
  * performs inventory and triggers tagEvent
  */
-export function startInventory(callback: ((data: TagData[]) => void) | null) {
+export function startInventory() {
   if (!_isConnected) throw new Error("connection not initialized");
-  if(callback) _onInventory = callback
   setProperties({ ...performInventoryOpt });
   window.rfid.tagEvent = "inventoryHandler(%json);";
   window.rfid.performInventory();
@@ -382,20 +414,19 @@ export const stop = () => {
 }
 
 const resetCallbacks = ()=>{
-  _onInventory = null
-   _tagLocateCallback = null
- _onEnumerate = null
- _onSingleScanEvent = null
+
+//   _onInventory = null
+//    _tagLocateCallback = null
+//  _onEnumerate = null
+//  _onSingleScan = null
 }
 
 /**
  * Scans a single rfid tag
  * @function
  */
-export const scanSingleRfid = (callback: ((data: TagData) => void) | null) => {
+export const scanSingleRfid = () => {
   if (!_isConnected) throw new Error("connection not initialized");
-  if(callback)
-  _onSingleScanEvent = callback;
   //setting options
   setProperties({ ...singleScanOpt });
   window.rfid.tagEvent = "scanSingleRfidHandler(%json);";
