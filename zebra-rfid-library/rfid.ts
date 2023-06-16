@@ -4,6 +4,7 @@ import { type TagData } from "./types/TagData";
 import { type Settings } from "./types/Settings";
 import { type EnumRfidResult } from "./types/EnumRfidResult";
 import { StatusDefinition } from "./types/statusDefinition";
+import defaultSettings from "./defaultSettings";
 
 /*
  *		---NOTES---
@@ -140,6 +141,12 @@ let performInventoryOpt: Settings = {
   startTriggerType: "immediate",
 };
 
+let locateTagOpt: Settings = {
+  startTriggerType: "immediate",
+  stopTriggerType: "duration",
+  stopDuration: 999999
+}
+
 /* METHODS */
 
 //gets error name to be used as key in statusManager
@@ -183,6 +190,7 @@ window.scanSingleRfidHandler = (dataArray: {TagData:TagData[]}) => {
   if(data)
   if (_onSingleScan) _onSingleScan(data);
   resetCallbacks()
+  stop()
 };
 
 window.inventoryHandler = (dataArray: TagOperationData) => {
@@ -372,9 +380,13 @@ export const locateTag = (tagId: string, ) => {
   window.rfid.tagEvent = "tagLocateHandler(%json);";
   window.rfid.antennaSelected = 1;
   window.rfid.tagID = tagId;
-  window.rfid.startTriggerType = "immediate";
+  setProperties({...locateTagOpt})
   window.rfid.locateTag();
 };
+
+export const setLocateTagOpt = (options: Settings) => {
+  locateTagOpt = {...locateTag, ...options}
+}
 
 /**
  * performs inventory and triggers tagEvent
@@ -411,6 +423,7 @@ export const setSingleScanOpt = (options: Settings) => {
 export const stop = () => {
   resetCallbacks()
   window.rfid.stop();
+  window.rfid = Object.assign(window.rfid, defaultSettings)
 }
 
 const resetCallbacks = ()=>{

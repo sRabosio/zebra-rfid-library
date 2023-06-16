@@ -24,6 +24,7 @@ export type Settings = Partial<{
   preFilterTarget: string,
   preFilterStateUnawareAction: string,
   preFilterBitCount: number,
+  preFilterBitOffset: number,
   preFilterHexPattern: string,
   preFilerID: number,
   preFilterMemBank: string,
@@ -41,6 +42,7 @@ export type Settings = Partial<{
   stopObservationCount: number,
   stopTriggerType: string,
   tagByteOffset: number,
+  tagKillPassword: string,
   tagID: string,
   tagMemBank: string,
   tagOffset: number,
@@ -57,4 +59,5 @@ export type Settings = Partial<{
   transport: string,
   useAccessFilter: number,
   useSoftTrigger: number,
+  tagPatternAHexPattern: string,
 }>;
