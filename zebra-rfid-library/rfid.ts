@@ -5,6 +5,7 @@ import { type Settings } from "./types/Settings";
 import { type EnumRfidResult } from "./types/EnumRfidResult";
 import { StatusDefinition } from "./types/statusDefinition";
 import defaultSettings from "./defaultSettings";
+import toSortedArray from "./util/toSortedArray"
 
 /*
  *		---NOTES---
@@ -121,30 +122,38 @@ const statusDefinitions: StatusDefinition[] = [
 /* VARIABLES */
 
 //keeps track if the library is used to avoid conflicts
+let _locateNearestBusy = false
 let _inUse = false;
 let _isConnected = false;
 let _onInventory: ((data: TagData[]) => void) | null;
 let _onSingleScan: ((TagData: TagData) => void) | null;
-
+let _onLocateNearest: ((distance:number)=>void) | null
+let precisionScanCache:TagData[] = []
 let singleScanOpt: Settings = {
   stopTriggerType: "tagObservation",
-  stopObservationCount: 1,
+
   reportUniqueTags: 1,
   startTriggerType: "immediate",
 };
+
 
 let performInventoryOpt: Settings = {
   stopTriggerType: "duration",
-  stopObservationCount: 999999,
   reportUniqueTags: 1,
-  reportTrigger: 1,
   startTriggerType: "immediate",
 };
+
+let precisionSingleScanOpt:Settings = {
+  startTriggerType: "triggePress",
+  reportUniqueTags: 1,
+  stopTriggerType: "duration",
+  enableTagSeenCount: 1,
+  
+}
 
 let locateTagOpt: Settings = {
   startTriggerType: "immediate",
   stopTriggerType: "duration",
-  stopDuration: 999999
 }
 
 /* METHODS */
@@ -175,13 +184,11 @@ const getError = (status: StatusEvent) =>
  *@link for the list of parameters see official zebra documentation:  https://techdocs.zebra.com/enterprise-browser/3-3/api/re2x/rfid/
  */
 export const setProperties = (props: Settings): boolean => {
-  const rfid = window.rfid;
-  if (rfid) {
-    window.rfid = Object.assign(rfid, props);
-    console.log("setProps", { props, rfid });
+  if (window.rfid) {
+    window.rfid = Object.assign(window.rfid, props);
     return true;
   }
-  console.log("setProps failed");
+  alert("setProps failed");
   return false;
 };
 
@@ -189,10 +196,14 @@ window.scanSingleRfidHandler = (dataArray: {TagData:TagData[]}) => {
   const data = dataArray.TagData.at(0)
   if(data)
   if (_onSingleScan) _onSingleScan(data);
-  resetCallbacks()
   stop()
 };
 
+window.precisionSingleScanHandler = (dataArray: {TagData:TagData[]})=>{
+  console.log("before adding to cache", precisionScanCache)
+  precisionScanCache = [...precisionScanCache, ...dataArray.TagData]
+  
+}
 window.inventoryHandler = (dataArray: TagOperationData) => {
   if (_onInventory) _onInventory([...dataArray.TagData]);
 };
@@ -201,9 +212,14 @@ window.tagLocateHandler = (data:TagLocateData) => {
   if (_tagLocateCallback) _tagLocateCallback(data);
 };
 
+window.locateNearestHandler = (data:TagLocateData)=>{
+  console.log("window callback", {data, _onLocateNearest})
+  const result = data.TagLocate
+  if(_onLocateNearest)_onLocateNearest(result)
+}
+
 window.enumRfid = (data:EnumRfidResult[]) => {
   if (_onEnumerate) _onEnumerate(data);
-  resetCallbacks()
 };
 
 let hasInit = false;
@@ -221,6 +237,7 @@ let _onDisconnectionCallback: (() => void) | null;
 let _onConnectionFailed: (() => void) | null;
 let _tagLocateCallback: ((data: TagLocateData) => void) | null;
 let _onEnumerate: ((data: EnumRfidResult[]) => void) | null;
+let _onPrecisionScanning: ((data:TagData)=>void) | null
 
 /**
  * attaches the library to the current component
@@ -301,6 +318,13 @@ export const onTagLocate = (callback: ((data: TagLocateData) => void)| null) => 
   _tagLocateCallback = callback;
 };
 
+export const setPrecisionSingleScanOpt = (options:Settings) =>{
+  precisionSingleScanOpt = {...precisionSingleScan, ...options}
+}
+
+export const onPrecisionScanning = (callback: (data:TagData)=>void)=>{
+  _onPrecisionScanning = callback
+}
 
 /**
  *
@@ -374,7 +398,7 @@ export const disconnect = () => {
  * @function
  * @param {string} tagId - rfid tag to locate
  */
-export const locateTag = (tagId: string, ) => {
+export const locateTag = (tagId: string ) => {
   if (!_isConnected) throw new Error("connection not initialized");
   if (!tagId) throw new Error ("invalid tag id");
   window.rfid.tagEvent = "tagLocateHandler(%json);";
@@ -383,6 +407,19 @@ export const locateTag = (tagId: string, ) => {
   setProperties({...locateTagOpt})
   window.rfid.locateTag();
 };
+
+const locateNearest = (tagId: string, callback:(distance:number)=>void)=>{
+  if (!_isConnected) throw new Error("connection not initialized");
+  if (!tagId) throw new Error ("invalid tag id");
+  _locateNearestBusy = true
+  _onLocateNearest = callback
+  console.log("locating nearest with callback", callback)
+  window.rfid.tagEvent = "locateNearestHandler(%json);";
+  window.rfid.antennaSelected = 1;
+  window.rfid.tagID = tagId;
+  setProperties({...locateTagOpt})
+  window.rfid.locateTag();
+}
 
 export const setLocateTagOpt = (options: Settings) => {
   locateTagOpt = {...locateTag, ...options}
@@ -393,10 +430,50 @@ export const setLocateTagOpt = (options: Settings) => {
  */
 export function startInventory() {
   if (!_isConnected) throw new Error("connection not initialized");
-  setProperties({ ...performInventoryOpt });
   window.rfid.tagEvent = "inventoryHandler(%json);";
+  setProperties({ ...performInventoryOpt });
   window.rfid.performInventory();
 }
+
+export const precisionSingleScan = ()=>{
+  if(!isConnected) throw new Error("Connection not initialized")
+  window.rfid.tagEvent = "precisionSingleScanHandler(%json)"
+  setProperties({...precisionSingleScanOpt})
+  window.rfid.performInventory()
+
+  setTimeout(()=>{
+    stop()
+    console.log("cached for precision", precisionScanCache)
+    calcNearest(precisionScanCache[Symbol.iterator](), (found)=>{
+      console.log("found is",found)
+      if(!found) return
+      if(_onPrecisionScanning)_onPrecisionScanning(found)
+      precisionScanCache = []
+    })    
+  },3000)
+}
+
+const calcNearest = (iter:IterableIterator<TagData>, callback:(found:TagData| void)=>void, currentNearest?:{tag: TagData , distance: number})=>{
+  const current:IteratorResult<any, TagData> = iter.next()
+  console.log("currently iterating",current)
+      if(current.done){
+        console.log("done", currentNearest)
+        callback(currentNearest?.tag)
+        _onLocateNearest = null
+        return
+      }
+      const locateNearestCallback = (distance:number)=>{
+        stop()
+        _onLocateNearest = null
+        console.log("currently found", {i:current.value, distance, cn:{...currentNearest}, condition: distance > 75 && (!currentNearest || (currentNearest &&  distance > currentNearest.distance)), nearstExists: Boolean(currentNearest), morethan0: distance > 0})
+        if(distance > 75 && (!currentNearest || (currentNearest &&  distance > currentNearest.distance))) currentNearest = {tag:current.value, distance}
+        console.log("selected nearest", currentNearest)
+        return calcNearest(iter, callback, currentNearest)
+      }
+      locateNearest(current.value.tagID, locateNearestCallback)
+    
+}
+
 
 /**
  *
@@ -421,17 +498,8 @@ export const setSingleScanOpt = (options: Settings) => {
  * stops current operation
  */
 export const stop = () => {
-  resetCallbacks()
   window.rfid.stop();
-  window.rfid = Object.assign(window.rfid, defaultSettings)
-}
-
-const resetCallbacks = ()=>{
-
-//   _onInventory = null
-//    _tagLocateCallback = null
-//  _onEnumerate = null
-//  _onSingleScan = null
+  // window.rfid = Object.assign(window.rfid, defaultSettings)
 }
 
 /**
