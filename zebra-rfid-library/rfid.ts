@@ -181,7 +181,7 @@ const Locals:{
 _rfidDefaults: {},
 
   init: ()=>{
-    console.log("init");
+    console.log("init", window.rfid);
     Locals._rfidDefaults = { ...window.rfid };
     window.rfid.statusEvent = "statusHandler(%json)";
     Locals.getReader();
@@ -366,7 +366,6 @@ const PrecisionSingleScan:{
     if (!Locals._isConnected) throw new Error("connection not initialized");
     if (!tagId) throw new Error ("invalid tag id");
     PrecisionSingleScan._onLocateNearest = callback
-    console.log("locating nearest with callback", callback)
     window.rfid.tagEvent = "locateNearestHandler(%json);";
     window.rfid.antennaSelected = 1;
     window.rfid.tagID = tagId;
@@ -392,7 +391,6 @@ const PrecisionSingleScan:{
   },
   calcNearest: (iter, callback, currentNearest)=>{
     const current:IteratorResult<any, TagData> = iter.next()
-    console.log("currently iterating",current)
         if(current.done){
           console.log("done", currentNearest)
           callback(currentNearest?.tag)
@@ -423,6 +421,7 @@ const Enumerate:{
   },
   _onEnumerate: null,
   enumerate: () => {
+    console.log(window.rfid)
     window.rfid.enumRFIDEvent = "enumRfid(%s);";
     window.rfid.enumerate();
   }
@@ -519,7 +518,7 @@ export const detach = Locals.detach;
  * @returns {number} number of rfid scanners found
  * @function
  */
-export const enumerate = Enumerate.enumerate()
+export const enumerate = Enumerate.enumerate
 
 /**
  * @function
