@@ -353,6 +353,7 @@ const PrecisionSingleScan:{
     reportUniqueTags: 1,
     stopTriggerType: "duration",
     enableTagSeenCount: 1,
+    
   },
   precisionSingleScanHandler: (dataArray)=>{
     console.log("before adding to cache", PrecisionSingleScan.precisionScanCache)
@@ -402,9 +403,11 @@ const PrecisionSingleScan:{
         let callbackCounter = 0
         let finalDistance = 0
         const locateNearestCallback = (distance:number)=>{
+          //checks 3 different result of locate before continuing to have better precision
           callbackCounter++;
           if(finalDistance < distance) finalDistance = distance
           if(callbackCounter<=3) return
+
           stop()
           PrecisionSingleScan._onLocateNearest = null
           console.log("currently found", {i:current.value, distance, cn:{...currentNearest}, condition: distance > PrecisionSingleScan.minDistance && (!currentNearest || (currentNearest &&  distance > currentNearest.distance)), nearstExists: Boolean(currentNearest), morethan0: distance > 0})
