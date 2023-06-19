@@ -342,12 +342,14 @@ const PrecisionSingleScan:{
   _onPrecisionScanning: ((data:TagData)=>void) | null,
   locateNearest: (tagId: string, callback:(distance:number)=>void)=>void,
   precisionSingleScan: ()=>void,
-  calcNearest: (iter:IterableIterator<TagData>, callback:(found:TagData| void)=>void, currentNearest?:{tag: TagData , distance: number})=>void
+  calcNearest: (iter:IterableIterator<TagData>, callback:(found:TagData| void)=>void, currentNearest?:{tag: TagData , distance: number})=>void,
+  minDistance: number
 } = {
   precisionScanCache: [],
+  minDistance: 75,
   _onLocateNearest:null,
   options:{
-    startTriggerType: "triggePress",
+    startTriggerType: "immediate",
     reportUniqueTags: 1,
     stopTriggerType: "duration",
     enableTagSeenCount: 1,
@@ -397,11 +399,16 @@ const PrecisionSingleScan:{
           PrecisionSingleScan._onLocateNearest = null
           return
         }
+        let callbackCounter = 0
+        let finalDistance = 0
         const locateNearestCallback = (distance:number)=>{
+          callbackCounter++;
+          if(finalDistance < distance) finalDistance = distance
+          if(callbackCounter<=3) return
           stop()
           PrecisionSingleScan._onLocateNearest = null
-          console.log("currently found", {i:current.value, distance, cn:{...currentNearest}, condition: distance > 75 && (!currentNearest || (currentNearest &&  distance > currentNearest.distance)), nearstExists: Boolean(currentNearest), morethan0: distance > 0})
-          if(distance > 75 && (!currentNearest || (currentNearest &&  distance > currentNearest.distance))) currentNearest = {tag:current.value, distance}
+          console.log("currently found", {i:current.value, distance, cn:{...currentNearest}, condition: distance > PrecisionSingleScan.minDistance && (!currentNearest || (currentNearest &&  distance > currentNearest.distance)), nearstExists: Boolean(currentNearest), morethan0: distance > 0})
+          if(distance > PrecisionSingleScan.minDistance && (!currentNearest || (currentNearest &&  distance > currentNearest.distance))) currentNearest = {tag:current.value, distance}
           console.log("selected nearest", currentNearest)
           return PrecisionSingleScan.calcNearest(iter, callback, currentNearest)
         }
@@ -540,6 +547,10 @@ export const locateTag = LocateTag.locateTag
 
 export const setLocateTagOpt = (options: Settings) => {
   LocateTag.options = {...LocateTag.options, ...options}
+}
+
+export const setPrecisionSingleScanMinDistance = (newDistance:number)=>{
+  PrecisionSingleScan.minDistance = newDistance
 }
 
 /**
