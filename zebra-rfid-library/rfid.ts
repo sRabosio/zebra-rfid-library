@@ -36,131 +36,97 @@ import toSortedArray from "./util/toSortedArray"
 
 /* TYPES */
 
-type TagOperationData = { TagData: TagData[] };
+type TagOperationData = { TagData: TagData[] }; 
 type TagLocateData = { TagLocate: number };
 
-/* WINDOW */
-window.statusHandler = (status: StatusEvent) => {
-  console.log("before status callback", {
-    status,
-    getError: getError(status),
-    _onConnectionCallback,
-  });
-  const error = getError(status);
-  if (!error) return;
-  const callback = statusManager[error];
-  if (callback) callback(status);
-  else if (status.errorCode != "1000")
-    console.warn(
-      `${status.vendorMessage || ""}  ${status.errorCode || ""}  ${
-        status.vendorMessage || ""
-      }`
-    );
-  else console.log("non error status", status);
-};
-/* CONST */
-
-const statusManager: { [key: string]: (status: StatusEvent) => void } = {
-  //connects to reader
-  CONNECTION_EVENT: (status) => {
-    defaultProperties();
-    _isConnected = true;
-    console.log("initialized with status", status);
-    if (_onConnectionCallback) _onConnectionCallback();
-  },
-  READER_NOT_CONNECTED: (status) => {
-    console.log(status.vendorMessage, status);
-    getReader();
-  },
-  RECONNECT: () => {
-    disconnect();
-    getReader();
-  },
-  //disconnects from reader
-  DISCONNECTION_EVENT: (status) => {
-    _isConnected = false;
-    console.log("disconnected with status", status);
-    if (_onDisconnectionCallback) _onDisconnectionCallback();
-  },
-  READER_LIST_EMPTY: (status) => {
-    console.log(status.vendorMessage);
-    getReader();
-  },
-};
-
-//error definitions to properly identify errors
-const statusDefinitions: StatusDefinition[] = [
-  {
-    name: "CONNECTION_EVENT",
-    errorCode: "1000",
-    vendorMessage: "CONNECTION_EVENT",
-    internalCode: "CONNECTION_EVENT",
-  },
-  {
-    name: "DISCONNECTION_EVENT",
-    errorCode: "1000",
-    vendorMessage: "DISCONNECTION_EVENT",
-    internalCode: "DISCONNECTION_EVENT",
-  },
-  {
-    name: "READER_NOT_CONNECTED",
-    errorCode: "2003",
-    vendorMessage: "Reader Not Connected",
-    internalCode: "READER_NOT_CONNECTED",
-  },
-  {
-    name: "INVENTORY_OPERATION_FAILURE",
-    errorCode: "2005",
-    method: "performInventory",
-    vendorMessage: "RFID_CHARGING_COMMAND_NOT_ALLOWED-Charging",
-  },
-  { name: "LOCATE_NO_TAG", errorCode: "2004", method: "locateTag" },
-  { errorCode: "2004", method: "connect", internalCode: "RECONNECT" },
-  { errorCode: "2000", method: "connect", internalCode: "READER_LIST_EMPTY" },
-];
-
-/* VARIABLES */
-
-//keeps track if the library is used to avoid conflicts
-let _locateNearestBusy = false
-let _inUse = false;
-let _isConnected = false;
-let _onInventory: ((data: TagData[]) => void) | null;
-let _onSingleScan: ((TagData: TagData) => void) | null;
-let _onLocateNearest: ((distance:number)=>void) | null
-let precisionScanCache:TagData[] = []
-let singleScanOpt: Settings = {
-  stopTriggerType: "tagObservation",
-
-  reportUniqueTags: 1,
-  startTriggerType: "immediate",
-};
 
 
-let performInventoryOpt: Settings = {
-  stopTriggerType: "duration",
-  reportUniqueTags: 1,
-  startTriggerType: "immediate",
-};
 
-let precisionSingleScanOpt:Settings = {
-  startTriggerType: "triggePress",
-  reportUniqueTags: 1,
-  stopTriggerType: "duration",
-  enableTagSeenCount: 1,
+const Status:{
+  statusManager:{ [key: string]: (status: StatusEvent) => void }
+  statusDefinitions: StatusDefinition[],
+  statusHandler:(status:StatusEvent)=>void,
+  getError: (status: StatusEvent) =>string | undefined
+} = {
+  statusManager:{
+    //connects to reader
+    CONNECTION_EVENT: (status) => {
+      Locals.defaultProperties();
+      Locals._isConnected = true;
+      console.log("initialized with status", status);
+      if (Locals._onConnectionCallback) Locals._onConnectionCallback();
+    },
+    READER_NOT_CONNECTED: (status) => {
+      console.log(status.vendorMessage, status);
+      Locals.getReader();
+    },
+    RECONNECT: () => {
+      disconnect();
+      Locals.getReader();
+    },
+    //disconnects from reader
+    DISCONNECTION_EVENT: (status) => {
+      Locals._isConnected = false;
+      console.log("disconnected with status", status);
+      if (Locals._onDisconnectionCallback) Locals._onDisconnectionCallback();
+    },
+    READER_LIST_EMPTY: (status) => {
+      console.log(status.vendorMessage);
+      Locals.getReader();
+    },
+    
+  },
+  statusHandler: (status: StatusEvent) => {
+    console.log("before status callback", {
+      status,
+      getError: Status.getError(status),
+      onCOnncall:Locals._onConnectionCallback,
+    });
+    const error = Status.getError(status);
+    if (!error) return;
+    const callback = Status.statusManager[error];
+    if (callback) callback(status);
+    else if (status.errorCode != "1000")
+      console.warn(
+        `${status.vendorMessage || ""}  ${status.errorCode || ""}  ${
+          status.vendorMessage || ""
+        }`
+      );
+    else console.log("non error status", status);
+  },
+  statusDefinitions:[
+    {
+      name: "CONNECTION_EVENT",
+      errorCode: "1000",
+      vendorMessage: "CONNECTION_EVENT",
+      internalCode: "CONNECTION_EVENT",
+    },
+    {
+      name: "DISCONNECTION_EVENT",
+      errorCode: "1000",
+      vendorMessage: "DISCONNECTION_EVENT",
+      internalCode: "DISCONNECTION_EVENT",
+    },
+    {
+      name: "READER_NOT_CONNECTED",
+      errorCode: "2003",
+      vendorMessage: "Reader Not Connected",
+      internalCode: "READER_NOT_CONNECTED",
+    },
+    {
+      name: "INVENTORY_OPERATION_FAILURE",
+      errorCode: "2005",
+      method: "performInventory",
+      vendorMessage: "RFID_CHARGING_COMMAND_NOT_ALLOWED-Charging",
+    },
+    { name: "LOCATE_NO_TAG", errorCode: "2004", method: "locateTag" },
+    { errorCode: "2004", method: "connect", internalCode: "RECONNECT" },
+    { errorCode: "2000", method: "connect", internalCode: "READER_LIST_EMPTY" },
+  ],
   
-}
-
-let locateTagOpt: Settings = {
-  startTriggerType: "immediate",
-  stopTriggerType: "duration",
-}
-
-/* METHODS */
-
-//gets error name to be used as key in statusManager
-const getError = (status: StatusEvent) =>
-  statusDefinitions
+  //gets error name to be used as key in statusManager
+  getError: (status: StatusEvent) =>
+    Status.statusDefinitions
     .filter(
       (e) =>
         e.errorCode === status.errorCode &&
@@ -175,7 +141,304 @@ const getError = (status: StatusEvent) =>
       if ((a.vendorMessage?.length || 0) < (b.vendorMessage?.length || 0))
         return 1;
       return 0;
-    })[0]?.internalCode;
+    })[0]?.internalCode
+}
+
+
+
+const Locals:{
+  _inUse: boolean,
+  _isConnected: boolean,
+  setProperties: (props:Settings)=>boolean
+  hasInit: boolean,
+  _rfidDefaults: Settings,
+  init: ()=>void,
+  _onConnectionCallback: (() => void) | null,
+  _onDisconnectionCallback: (() => void) | null,
+  _onConnectionFailed: (() => void) | null,
+  attach: ({
+    success,
+    failure,
+  }: {
+    success: () => void,
+    failure: () => void,
+  })=> void,
+  detach: (callback: () => void)=> void,
+  getReader: ()=>void,
+  defaultProperties: ()=>void
+} = {
+  _inUse: false,
+  _isConnected: false,
+  setProperties: (props: Settings): boolean => {
+    if (window.rfid) {
+      window.rfid = Object.assign(window.rfid, props);
+      return true;
+    }
+    alert("setProps failed");
+    return false;
+  },
+  hasInit: false,
+_rfidDefaults: {},
+
+  init: ()=>{
+    console.log("init");
+    Locals._rfidDefaults = { ...window.rfid };
+    window.rfid.statusEvent = "statusHandler(%json)";
+    Locals.getReader();
+  },
+  _onConnectionCallback: null,
+  _onDisconnectionCallback: null,
+  _onConnectionFailed: null,
+  attach: ({
+    success,
+    failure,
+  }) => {
+    console.log("attaching", new Date().getTime());
+    Locals._onConnectionFailed = failure;
+    if (Locals._inUse) {
+      console.log("in use true");
+      if (Locals._onConnectionFailed) Locals._onConnectionFailed();
+      return;
+    }
+    Locals._onConnectionCallback = success;
+    console.log("lib free", new Date().getTime());
+    Locals._inUse = true;
+    let interCount = 0;
+    //leave at the bottom
+    console.log("starting attach", new Date().getTime());
+    const interInit: any = setInterval(() => {
+      const rfid = window.rfid;
+      if (rfid) {
+        if (Locals.hasInit) return;
+        Locals.init();
+        clearInterval(interInit);
+      }
+      interCount++;
+      if (interCount > 20) {
+        console.log("failed init");
+        Locals._isConnected = false;
+        if (Locals._onConnectionFailed) Locals._onConnectionFailed();
+        clearInterval(interInit);
+      }
+    }, 300);
+  },
+  detach: (callback) => {
+    Locals._onDisconnectionCallback = callback;
+    if (!Locals.hasInit) return;
+    Enumerate._onEnumerate = null
+    SingleScan._onSingleScan = null
+    Inventory._onInventory = null;
+    PrecisionSingleScan._onLocateNearest = null
+    PrecisionSingleScan._onPrecisionScanning = null
+    setProperties({ ...Locals._rfidDefaults });
+    Locals.defaultProperties();
+    disconnect();
+    console.log("detached");
+    Locals.hasInit = false;
+    Locals._inUse = false;
+  },
+  getReader: ()=> {
+    console.log("searching for reader");
+    onEnumerate((readers: any) => {
+      window.rfid.readerID = readers[0][0];
+    })
+    Enumerate.enumerate()
+    window.rfid.connect();
+  },
+  
+  defaultProperties: ()=> {
+    console.log("before default");
+    setProperties({
+      beepOnRead: 1,
+      transport: "serial",
+      useSoftTrigger: 1,
+    });
+  }
+}
+
+
+
+const Inventory: {
+  _onInventory: ((data: TagData[]) => void) | null,
+  options: Settings,
+  inventoryHandler: (dataArray:TagOperationData)=>void
+} = {
+  _onInventory: null,
+  options: {
+    stopTriggerType: "duration",
+    reportUniqueTags: 1,
+    startTriggerType: "immediate",
+  },
+  inventoryHandler: window.inventoryHandler = (dataArray: TagOperationData) => {
+    if (Inventory._onInventory) Inventory._onInventory([...dataArray.TagData]);
+  },
+}
+
+
+
+const SingleScan:{
+  _onSingleScan: ((TagData: TagData) => void) | null,
+  options: Settings,
+  scanSingleRfid: ()=>void,
+  scanSingleRfidHandler: (dataArray: {TagData:TagData[]})=>void
+} = {
+  _onSingleScan: null,
+  options: {
+    stopTriggerType: "tagObservation",
+    reportUniqueTags: 1,
+    startTriggerType: "immediate",
+  },
+  scanSingleRfid: () => {
+    if (!Locals._isConnected) throw new Error("connection not initialized");
+    //setting options
+    setProperties({ ...SingleScan.options });
+    window.rfid.tagEvent = "scanSingleRfidHandler(%json);";
+    window.rfid.performInventory();
+  },
+  scanSingleRfidHandler: (dataArray: {TagData:TagData[]}) => {
+    const data = dataArray.TagData.at(0)
+    if(data)
+    if (SingleScan._onSingleScan) SingleScan._onSingleScan(data);
+    stop()
+  },
+}
+
+
+
+const LocateTag: {
+  _onTagLocate: ((data: TagLocateData) => void) | null,
+  options: Settings,
+  tagLocateHandler: (data:TagLocateData)=>void,
+  locateTag: (tagId: string ) =>void
+} = {
+  _onTagLocate: null,
+  options: {
+    startTriggerType: "immediate",
+    stopTriggerType: "duration",
+  },
+  tagLocateHandler: (data:TagLocateData) => {
+    if (LocateTag._onTagLocate) LocateTag._onTagLocate(data);
+  },
+  locateTag: (tagId) => {
+    if (!Locals._isConnected) throw new Error("connection not initialized");
+    if (!tagId) throw new Error ("invalid tag id");
+    window.rfid.tagEvent = "tagLocateHandler(%json);";
+    window.rfid.antennaSelected = 1;
+    window.rfid.tagID = tagId;
+    setProperties({...LocateTag.options})
+    window.rfid.locateTag();
+  }
+}
+
+
+
+
+const PrecisionSingleScan:{
+  precisionScanCache:TagData[],
+  _onLocateNearest:((distance:number)=>void) | null
+  options: Settings,
+  precisionSingleScanHandler: (dataArray: {TagData:TagData[]})=>void,
+  locateNearestHandler: (data:TagLocateData)=>void,
+  _onPrecisionScanning: ((data:TagData)=>void) | null,
+  locateNearest: (tagId: string, callback:(distance:number)=>void)=>void,
+  precisionSingleScan: ()=>void,
+  calcNearest: (iter:IterableIterator<TagData>, callback:(found:TagData| void)=>void, currentNearest?:{tag: TagData , distance: number})=>void
+} = {
+  precisionScanCache: [],
+  _onLocateNearest:null,
+  options:{
+    startTriggerType: "triggePress",
+    reportUniqueTags: 1,
+    stopTriggerType: "duration",
+    enableTagSeenCount: 1,
+  },
+  precisionSingleScanHandler: (dataArray)=>{
+    console.log("before adding to cache", PrecisionSingleScan.precisionScanCache)
+    PrecisionSingleScan.precisionScanCache = [...PrecisionSingleScan.precisionScanCache, ...dataArray.TagData]
+  },
+  locateNearestHandler: (data:TagLocateData)=>{
+    console.log("window callback", {data, onLocateNearest:PrecisionSingleScan._onLocateNearest})
+    const result = data.TagLocate
+    if(PrecisionSingleScan._onLocateNearest)PrecisionSingleScan._onLocateNearest(result)
+  },
+  _onPrecisionScanning: null,
+  locateNearest: (tagId, callback)=>{
+    if (!Locals._isConnected) throw new Error("connection not initialized");
+    if (!tagId) throw new Error ("invalid tag id");
+    PrecisionSingleScan._onLocateNearest = callback
+    console.log("locating nearest with callback", callback)
+    window.rfid.tagEvent = "locateNearestHandler(%json);";
+    window.rfid.antennaSelected = 1;
+    window.rfid.tagID = tagId;
+    setProperties({...LocateTag.options})
+    window.rfid.locateTag();
+  },
+  precisionSingleScan: ()=>{
+    if(!isConnected) throw new Error("Connection not initialized")
+    window.rfid.tagEvent = "precisionSingleScanHandler(%json)"
+    setProperties({...PrecisionSingleScan.options})
+    window.rfid.performInventory()
+  
+    setTimeout(()=>{
+      stop()
+      console.log("cached for precision", PrecisionSingleScan.precisionScanCache)
+      PrecisionSingleScan.calcNearest(PrecisionSingleScan.precisionScanCache[Symbol.iterator](), (found)=>{
+        console.log("found is",found)
+        if(!found) return
+        if(PrecisionSingleScan._onPrecisionScanning)PrecisionSingleScan._onPrecisionScanning(found)
+        PrecisionSingleScan.precisionScanCache = []
+      })    
+    },3000)
+  },
+  calcNearest: (iter, callback, currentNearest)=>{
+    const current:IteratorResult<any, TagData> = iter.next()
+    console.log("currently iterating",current)
+        if(current.done){
+          console.log("done", currentNearest)
+          callback(currentNearest?.tag)
+          PrecisionSingleScan._onLocateNearest = null
+          return
+        }
+        const locateNearestCallback = (distance:number)=>{
+          stop()
+          PrecisionSingleScan._onLocateNearest = null
+          console.log("currently found", {i:current.value, distance, cn:{...currentNearest}, condition: distance > 75 && (!currentNearest || (currentNearest &&  distance > currentNearest.distance)), nearstExists: Boolean(currentNearest), morethan0: distance > 0})
+          if(distance > 75 && (!currentNearest || (currentNearest &&  distance > currentNearest.distance))) currentNearest = {tag:current.value, distance}
+          console.log("selected nearest", currentNearest)
+          return PrecisionSingleScan.calcNearest(iter, callback, currentNearest)
+        }
+        PrecisionSingleScan.locateNearest(current.value.tagID, locateNearestCallback)
+      
+  }
+  
+}
+
+const Enumerate:{
+  enumRfid: (data:EnumRfidResult[])=>void,
+  _onEnumerate: ((data: EnumRfidResult[]) => void) | null,
+  enumerate: ()=> void
+} = {
+  enumRfid: (data) => {
+    if (Enumerate._onEnumerate) Enumerate._onEnumerate(data);
+  },
+  _onEnumerate: null,
+  enumerate: () => {
+    window.rfid.enumRFIDEvent = "enumRfid(%s);";
+    window.rfid.enumerate();
+  }
+
+}
+
+
+
+/* WINDOW DECLARATIONS */
+window.scanSingleRfidHandler = SingleScan.scanSingleRfidHandler 
+window.precisionSingleScanHandler = PrecisionSingleScan.precisionSingleScanHandler
+window.tagLocateHandler = LocateTag.tagLocateHandler
+window.locateNearestHandler = PrecisionSingleScan.locateNearestHandler
+window.enumRfid = Enumerate.enumRfid
+window.statusHandler = Status.statusHandler
+
 
 /**
  * @function
@@ -183,61 +446,8 @@ const getError = (status: StatusEvent) =>
  * @returns {boolean} operation success/failure
  *@link for the list of parameters see official zebra documentation:  https://techdocs.zebra.com/enterprise-browser/3-3/api/re2x/rfid/
  */
-export const setProperties = (props: Settings): boolean => {
-  if (window.rfid) {
-    window.rfid = Object.assign(window.rfid, props);
-    return true;
-  }
-  alert("setProps failed");
-  return false;
-};
 
-window.scanSingleRfidHandler = (dataArray: {TagData:TagData[]}) => {
-  const data = dataArray.TagData.at(0)
-  if(data)
-  if (_onSingleScan) _onSingleScan(data);
-  stop()
-};
-
-window.precisionSingleScanHandler = (dataArray: {TagData:TagData[]})=>{
-  console.log("before adding to cache", precisionScanCache)
-  precisionScanCache = [...precisionScanCache, ...dataArray.TagData]
-  
-}
-window.inventoryHandler = (dataArray: TagOperationData) => {
-  if (_onInventory) _onInventory([...dataArray.TagData]);
-};
-
-window.tagLocateHandler = (data:TagLocateData) => {
-  if (_tagLocateCallback) _tagLocateCallback(data);
-};
-
-window.locateNearestHandler = (data:TagLocateData)=>{
-  console.log("window callback", {data, _onLocateNearest})
-  const result = data.TagLocate
-  if(_onLocateNearest)_onLocateNearest(result)
-}
-
-window.enumRfid = (data:EnumRfidResult[]) => {
-  if (_onEnumerate) _onEnumerate(data);
-};
-
-let hasInit = false;
-let _rfidDefaults: Settings;
-
-function init() {
-  console.log("init");
-  _rfidDefaults = { ...window.rfid };
-  window.rfid.statusEvent = "statusHandler(%json)";
-  getReader();
-}
-
-let _onConnectionCallback: (() => void) | null;
-let _onDisconnectionCallback: (() => void) | null;
-let _onConnectionFailed: (() => void) | null;
-let _tagLocateCallback: ((data: TagLocateData) => void) | null;
-let _onEnumerate: ((data: EnumRfidResult[]) => void) | null;
-let _onPrecisionScanning: ((data:TagData)=>void) | null
+export const setProperties = Locals.setProperties
 
 /**
  * attaches the library to the current component
@@ -247,49 +457,14 @@ let _onPrecisionScanning: ((data:TagData)=>void) | null
  * @param {function} success - gets called on connection event
  * @param {function} failure - gets called on connection event
  */
-export const attach = ({
-  success,
-  failure,
-}: {
-  success: () => void,
-  failure: () => void,
-}): void => {
-  console.log("attaching", new Date().getTime());
-  _onConnectionFailed = failure;
-  if (_inUse) {
-    console.log("in use true");
-    if (_onConnectionFailed) _onConnectionFailed();
-    return;
-  }
-  _onConnectionCallback = success;
-  console.log("lib free", new Date().getTime());
-  _inUse = true;
-  let interCount = 0;
-  //leave at the bottom
-  console.log("starting attach", new Date().getTime());
-  const interInit: any = setInterval(() => {
-    const rfid = window.rfid;
-    if (rfid) {
-      if (hasInit) return;
-      init();
-      clearInterval(interInit);
-    }
-    interCount++;
-    if (interCount > 20) {
-      console.log("failed init");
-      _isConnected = false;
-      if (_onConnectionFailed) _onConnectionFailed();
-      clearInterval(interInit);
-    }
-  }, 300);
-};
+export const attach = Locals.attach
 
 /**
  * @function
  * @param {onEnumerateEvent} callback - function that gets called during "enumerate()" execution
  */
 export const onEnumerate = (callback: ((data: EnumRfidResult[]) => void) | null) => {
-  _onEnumerate = callback;
+  Enumerate._onEnumerate = callback;
   
 };
 
@@ -298,7 +473,7 @@ export const onEnumerate = (callback: ((data: EnumRfidResult[]) => void) | null)
  * @param {onInventoryEvent} callback - function that gets called during "startInventory()" execution
  */
 export const onInventory = (callback: ((data: TagData[]) => void) | null) => {
-  _onInventory = callback;
+  Inventory._onInventory = callback;
 };
 
 
@@ -307,7 +482,7 @@ export const onInventory = (callback: ((data: TagData[]) => void) | null) => {
  * @param {onScanSingleRfidEvent} callback - function that gets called during "scanSingleRfid" operation
  */
 export const onScanSingleRfid = (callback: ((data: TagData) => void) | null) => {
-  _onSingleScan = callback;
+  SingleScan._onSingleScan = callback;
 };
 
 /**
@@ -315,71 +490,36 @@ export const onScanSingleRfid = (callback: ((data: TagData) => void) | null) => 
  * @function
  */
 export const onTagLocate = (callback: ((data: TagLocateData) => void)| null) => {
-  _tagLocateCallback = callback;
+  LocateTag._onTagLocate = callback;
 };
 
 export const setPrecisionSingleScanOpt = (options:Settings) =>{
-  precisionSingleScanOpt = {...precisionSingleScan, ...options}
+  PrecisionSingleScan.options = {...PrecisionSingleScan.options, ...options}
 }
 
 export const onPrecisionScanning = (callback: (data:TagData)=>void)=>{
-  _onPrecisionScanning = callback
+  PrecisionSingleScan._onPrecisionScanning = callback
 }
 
 /**
  *
  * @returns {boolean} true if the library has initialized correctly
  */
-export const isConnected: () => boolean = () => _isConnected;
+export const isConnected: () => boolean = () => Locals._isConnected;
 
 /**
  * detaches library from component resetting callbacks & properties
  * @function
  * @param {function} onDisconnection - called on disconnection event
  */
-export const detach = (callback: () => void): void => {
-  //TODO: reset props of rfid
-  _onDisconnectionCallback = callback;
-  if (!hasInit) return;
-  _onEnumerate = null
-  _onSingleScan = null
-  _onInventory = null;
-  _onSingleScan = null
-  setProperties({ ..._rfidDefaults });
-  defaultProperties();
-  disconnect();
-  console.log("detached");
-  hasInit = false;
-  _inUse = false;
-};
-
-function getReader() {
-  console.log("searching for reader");
-  onEnumerate((readers: any) => {
-    window.rfid.readerID = readers[0][0];
-  })
-  enumerate()
-  window.rfid.connect();
-}
-
-function defaultProperties() {
-  console.log("before default");
-  setProperties({
-    beepOnRead: 1,
-    transport: "serial",
-    useSoftTrigger: 1,
-  });
-}
+export const detach = Locals.detach;
 
 /**
  * Calls "onEnumerate" callback function and returns the number of rfid scanners
  * @returns {number} number of rfid scanners found
  * @function
  */
-export const enumerate = (): void => {
-  window.rfid.enumRFIDEvent = "enumRfid(%s);";
-  window.rfid.enumRFIDEvent = "enumRfid(%s);";
-  window.rfid.enumerate();}
+export const enumerate = Enumerate.enumerate()
 
 /**
  * @function
@@ -392,88 +532,28 @@ export const disconnect = () => {
   window.rfid.disconnect();
 };
 
-
 /**
  * locates a tag with the given rfid
  * @function
  * @param {string} tagId - rfid tag to locate
  */
-export const locateTag = (tagId: string ) => {
-  if (!_isConnected) throw new Error("connection not initialized");
-  if (!tagId) throw new Error ("invalid tag id");
-  window.rfid.tagEvent = "tagLocateHandler(%json);";
-  window.rfid.antennaSelected = 1;
-  window.rfid.tagID = tagId;
-  setProperties({...locateTagOpt})
-  window.rfid.locateTag();
-};
-
-const locateNearest = (tagId: string, callback:(distance:number)=>void)=>{
-  if (!_isConnected) throw new Error("connection not initialized");
-  if (!tagId) throw new Error ("invalid tag id");
-  _locateNearestBusy = true
-  _onLocateNearest = callback
-  console.log("locating nearest with callback", callback)
-  window.rfid.tagEvent = "locateNearestHandler(%json);";
-  window.rfid.antennaSelected = 1;
-  window.rfid.tagID = tagId;
-  setProperties({...locateTagOpt})
-  window.rfid.locateTag();
-}
+export const locateTag = LocateTag.locateTag
 
 export const setLocateTagOpt = (options: Settings) => {
-  locateTagOpt = {...locateTag, ...options}
+  LocateTag.options = {...LocateTag.options, ...options}
 }
 
 /**
  * performs inventory and triggers tagEvent
  */
 export function startInventory() {
-  if (!_isConnected) throw new Error("connection not initialized");
+  if (!Locals._isConnected) throw new Error("connection not initialized");
   window.rfid.tagEvent = "inventoryHandler(%json);";
-  setProperties({ ...performInventoryOpt });
+  setProperties({ ...Inventory.options });
   window.rfid.performInventory();
 }
 
-export const precisionSingleScan = ()=>{
-  if(!isConnected) throw new Error("Connection not initialized")
-  window.rfid.tagEvent = "precisionSingleScanHandler(%json)"
-  setProperties({...precisionSingleScanOpt})
-  window.rfid.performInventory()
-
-  setTimeout(()=>{
-    stop()
-    console.log("cached for precision", precisionScanCache)
-    calcNearest(precisionScanCache[Symbol.iterator](), (found)=>{
-      console.log("found is",found)
-      if(!found) return
-      if(_onPrecisionScanning)_onPrecisionScanning(found)
-      precisionScanCache = []
-    })    
-  },3000)
-}
-
-const calcNearest = (iter:IterableIterator<TagData>, callback:(found:TagData| void)=>void, currentNearest?:{tag: TagData , distance: number})=>{
-  const current:IteratorResult<any, TagData> = iter.next()
-  console.log("currently iterating",current)
-      if(current.done){
-        console.log("done", currentNearest)
-        callback(currentNearest?.tag)
-        _onLocateNearest = null
-        return
-      }
-      const locateNearestCallback = (distance:number)=>{
-        stop()
-        _onLocateNearest = null
-        console.log("currently found", {i:current.value, distance, cn:{...currentNearest}, condition: distance > 75 && (!currentNearest || (currentNearest &&  distance > currentNearest.distance)), nearstExists: Boolean(currentNearest), morethan0: distance > 0})
-        if(distance > 75 && (!currentNearest || (currentNearest &&  distance > currentNearest.distance))) currentNearest = {tag:current.value, distance}
-        console.log("selected nearest", currentNearest)
-        return calcNearest(iter, callback, currentNearest)
-      }
-      locateNearest(current.value.tagID, locateNearestCallback)
-    
-}
-
+export const precisionSingleScan = PrecisionSingleScan.precisionSingleScan
 
 /**
  *
@@ -481,7 +561,7 @@ const calcNearest = (iter:IterableIterator<TagData>, callback:(found:TagData| vo
  * check out all the options available  on {@link https://techdocs.zebra.com/enterprise-browser/3-3/api/re2x/rfid/}
  */
 export const setInventoryOpt = (options: Settings) => {
-  performInventoryOpt = { ...performInventoryOpt, ...options };
+  Inventory.options = { ...Inventory.options, ...options };
 };
 
 /**
@@ -490,7 +570,7 @@ export const setInventoryOpt = (options: Settings) => {
  * check out all the options available  on {@link https://techdocs.zebra.com/enterprise-browser/3-3/api/re2x/rfid/}
  */
 export const setSingleScanOpt = (options: Settings) => {
-  singleScanOpt = { ...singleScanOpt, ...options };
+  SingleScan.options = { ...SingleScan.options, ...options };
 };
 
 /***
@@ -506,10 +586,5 @@ export const stop = () => {
  * Scans a single rfid tag
  * @function
  */
-export const scanSingleRfid = () => {
-  if (!_isConnected) throw new Error("connection not initialized");
-  //setting options
-  setProperties({ ...singleScanOpt });
-  window.rfid.tagEvent = "scanSingleRfidHandler(%json);";
-  window.rfid.performInventory();
-};
+export const scanSingleRfid = SingleScan.scanSingleRfid
+
