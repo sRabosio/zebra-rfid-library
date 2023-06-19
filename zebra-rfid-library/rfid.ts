@@ -174,7 +174,6 @@ const Locals:{
       window.rfid = Object.assign(window.rfid, props);
       return true;
     }
-    alert("setProps failed");
     return false;
   },
   hasInit: false,
